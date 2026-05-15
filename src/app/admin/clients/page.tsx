@@ -1,140 +1,144 @@
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
+import Link from "next/link";
 
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { ClientsTable } from "@/components/admin/ClientsTable";
+import { EmptyState } from "@/components/admin/EmptyState";
 import { SectionHeader } from "@/components/admin/SectionHeader";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getAdminDisplayUser,
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { listClients } from "@/lib/repositories/clients.repository";
+import type { Client, ClientStatus } from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
 
-const clients = [
-  {
-    name: "Nova Media",
-    activePages: "14",
-    trackingProfiles: "3",
-    status: "Active",
-    lastUpdated: "Today",
-  },
-  {
-    name: "Apex Growth",
-    activePages: "9",
-    trackingProfiles: "2",
-    status: "Active",
-    lastUpdated: "Yesterday",
-  },
-  {
-    name: "Northline Ads",
-    activePages: "6",
-    trackingProfiles: "1",
-    status: "Paused",
-    lastUpdated: "3 days ago",
-  },
-  {
-    name: "Urban Scale",
-    activePages: "19",
-    trackingProfiles: "4",
-    status: "Active",
-    lastUpdated: "1 week ago",
-  },
-];
+type SummaryCardProps = {
+  label: string;
+  value: number;
+};
 
-function ClientStatusBadge({ status }: { status: string }) {
-  const className =
-    status === "Active"
-      ? "border-[#BBF7D0] bg-[#ECFDF5] text-[#16A34A]"
-      : "border-[#FDE68A] bg-[#FFFBEB] text-[#D97706]";
-
+function SummaryCard({ label, value }: SummaryCardProps) {
   return (
-    <Badge variant="outline" className={className}>
-      {status}
-    </Badge>
+    <AdminCard className="min-h-[96px]" padding="md">
+      <p className="text-[13px] font-medium text-[#64748B]">{label}</p>
+      <p className="mt-3 text-[26px] font-bold leading-none tracking-tight text-[#0F172A]">
+        {value}
+      </p>
+    </AdminCard>
+  );
+}
+
+function getClientCountByStatus(clients: Client[], status: ClientStatus) {
+  return clients.filter((client) => client.status === status).length;
+}
+
+function ClientLoadError() {
+  return (
+    <AdminCard>
+      <div className="max-w-xl">
+        <h2 className="text-lg font-bold text-[#0F172A]">
+          Unable to load clients
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[#64748B]">
+          There was a problem loading client data. Check Supabase configuration
+          and RLS policies.
+        </p>
+      </div>
+    </AdminCard>
   );
 }
 
 export default async function ClientsPage() {
   const adminUser = await requireAdminUser();
+  let clients: Client[] = [];
+  let hasLoadError = false;
+
+  try {
+    clients = await listClients();
+  } catch (error) {
+    console.error("Unable to load clients", error);
+    hasLoadError = true;
+  }
 
   return (
     <AdminShell
       title="Clients"
-      description="Manage client workspaces, tracking profiles, and landing page ownership."
+      description="Manage client workspaces, ownership, and campaign infrastructure."
       user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <SectionHeader
           title="Clients"
-          description="Client records shown here are placeholders for the Phase 1 shell."
+          description="Manage client workspaces, ownership, and campaign infrastructure."
           action={
             <Button
-              disabled
-              className="h-9 rounded-[10px] bg-[#2563EB] px-3 text-sm font-semibold text-white"
+              asChild
+              className="h-[38px] rounded-[10px] bg-[#2563EB] px-3 text-sm font-semibold text-white hover:bg-[#1D4ED8]"
             >
-              <Plus data-icon="inline-start" />
-              Add Client
+              <Link href="/admin/clients/new">
+                <Plus data-icon="inline-start" />
+                Add Client
+              </Link>
             </Button>
           }
         />
 
-        <AdminCard padding="none">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-[#E2E8F0] hover:bg-transparent">
-                <TableHead className="h-12 px-5 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">
-                  Client
-                </TableHead>
-                <TableHead className="h-12 px-5 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">
-                  Active Pages
-                </TableHead>
-                <TableHead className="h-12 px-5 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">
-                  Tracking Profiles
-                </TableHead>
-                <TableHead className="h-12 px-5 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">
-                  Status
-                </TableHead>
-                <TableHead className="h-12 px-5 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">
-                  Last Updated
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clients.map((client) => (
-                <TableRow
-                  key={client.name}
-                  className="border-[#E2E8F0] hover:bg-[#F8FAFC]"
-                >
-                  <TableCell className="px-5 py-4 text-sm font-semibold text-[#0F172A]">
-                    {client.name}
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-sm text-[#475569]">
-                    {client.activePages}
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-sm text-[#475569]">
-                    {client.trackingProfiles}
-                  </TableCell>
-                  <TableCell className="px-5 py-4">
-                    <ClientStatusBadge status={client.status} />
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-sm text-[#64748B]">
-                    {client.lastUpdated}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </AdminCard>
+        <div className="grid grid-cols-4 gap-4">
+          <SummaryCard label="Total Clients" value={clients.length} />
+          <SummaryCard
+            label="Active"
+            value={getClientCountByStatus(clients, "active")}
+          />
+          <SummaryCard
+            label="Paused"
+            value={getClientCountByStatus(clients, "paused")}
+          />
+          <SummaryCard
+            label="Archived"
+            value={getClientCountByStatus(clients, "archived")}
+          />
+        </div>
+
+        {hasLoadError ? (
+          <ClientLoadError />
+        ) : (
+          <AdminCard padding="none">
+            <div className="border-b border-[#E2E8F0] p-5">
+              <h2 className="text-lg font-bold leading-tight text-[#0F172A]">
+                Client Directory
+              </h2>
+              <p className="mt-1 text-[13px] leading-5 text-[#64748B]">
+                All client workspaces available to Digifixx operators.
+              </p>
+            </div>
+            {clients.length > 0 ? (
+              <ClientsTable clients={clients} />
+            ) : (
+              <div className="p-5">
+                <EmptyState
+                  icon={Users}
+                  title="No clients yet"
+                  description="Create your first client workspace before adding landing pages and tracking profiles."
+                  action={
+                    <Button
+                      asChild
+                      className="h-[38px] rounded-[10px] bg-[#2563EB] px-3 text-sm font-semibold text-white hover:bg-[#1D4ED8]"
+                    >
+                      <Link href="/admin/clients/new">
+                        <Plus data-icon="inline-start" />
+                        Add Client
+                      </Link>
+                    </Button>
+                  }
+                />
+              </div>
+            )}
+          </AdminCard>
+        )}
       </div>
     </AdminShell>
   );

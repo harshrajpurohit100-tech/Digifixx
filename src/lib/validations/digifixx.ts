@@ -31,12 +31,13 @@ export const createClientSchema = z.object({
   name: z.string().trim().min(2).max(120),
   internal_code: optionalText(80),
   contact_name: optionalText(120),
-  contact_email: z
-    .string()
-    .trim()
-    .email()
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
+  contact_email: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === ""
+        ? undefined
+        : value,
+    z.string().trim().email().optional()
+  ),
   contact_phone: optionalText(30),
   notes: optionalText(2000),
 });
