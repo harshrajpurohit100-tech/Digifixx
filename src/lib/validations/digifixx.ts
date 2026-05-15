@@ -119,7 +119,7 @@ export const createLandingPageWithTrackingSchema = z.object({
   support_line_1: optionalText(220),
   support_line_2: optionalText(220),
   top_notice_text: optionalText(160),
-  cta_button_text: z.string().trim().min(1).max(60),
+  cta_button_text: optionalText(60),
   primary_button_url: z.url(),
   footer_note: optionalText(300),
   is_countdown_enabled: formBoolean.default(false),

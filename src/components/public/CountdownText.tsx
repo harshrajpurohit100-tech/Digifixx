@@ -33,11 +33,15 @@ export function CountdownText({ seconds, urgencyText }: CountdownTextProps) {
   }, [seconds]);
 
   return (
-    <div className="mt-[22px] rounded-2xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-center">
-      <p className="text-sm font-semibold text-[#991B1B]">
+    <div className="mt-[22px] rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] px-3.5 py-3 text-center">
+      <p className="text-[13px] font-bold text-[#9A3412]">
         {urgencyText || "Invitation closes soon"}
       </p>
-      <p className="mt-2 text-xl font-bold text-[#DC2626]">
+      <p
+        className={`mt-1 text-lg font-extrabold ${
+          remainingSeconds > 0 ? "text-[#EA580C]" : "text-[#B91C1C]"
+        }`}
+      >
         {remainingSeconds > 0
           ? `Invitation closes in ${formatRemainingSeconds(remainingSeconds)}`
           : "Invitation window ended"}

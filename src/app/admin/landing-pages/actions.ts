@@ -3,6 +3,13 @@
 import { redirect } from "next/navigation";
 
 import { getAdminUser } from "@/lib/auth/get-admin-user";
+import {
+  DEFAULT_CTA_BUTTON_TEXT,
+  DEFAULT_FOOTER_NOTE,
+  DEFAULT_SUPPORT_LINE_1,
+  DEFAULT_SUPPORT_LINE_2,
+  DEFAULT_TOP_NOTICE_TEXT,
+} from "@/lib/landing-page-defaults";
 import { createAuditLog } from "@/lib/repositories/audit-logs.repository";
 import { getClientById } from "@/lib/repositories/clients.repository";
 import {
@@ -29,6 +36,10 @@ function getString(formData: FormData, key: string) {
 function getLogoFile(formData: FormData) {
   const value = formData.get("logo");
   return value instanceof File && value.size > 0 ? value : null;
+}
+
+function withDefault(value: string | undefined, fallback: string) {
+  return value?.trim() || fallback;
 }
 
 export async function createLandingPageAction(
@@ -107,6 +118,26 @@ export async function createLandingPageAction(
 
   const publicCode = await generateUniquePublicCode();
   let logoUpload: { path: string; publicUrl: string } | null = null;
+  const supportLine1 = withDefault(
+    parsedInput.data.support_line_1,
+    DEFAULT_SUPPORT_LINE_1
+  );
+  const supportLine2 = withDefault(
+    parsedInput.data.support_line_2,
+    DEFAULT_SUPPORT_LINE_2
+  );
+  const topNoticeText = withDefault(
+    parsedInput.data.top_notice_text,
+    DEFAULT_TOP_NOTICE_TEXT
+  );
+  const ctaButtonText = withDefault(
+    parsedInput.data.cta_button_text,
+    DEFAULT_CTA_BUTTON_TEXT
+  );
+  const footerNote = withDefault(
+    parsedInput.data.footer_note,
+    DEFAULT_FOOTER_NOTE
+  );
 
   try {
     if (logoFile) {
@@ -129,23 +160,21 @@ export async function createLandingPageAction(
       template: "telegram_join",
       page_title: parsedInput.data.channel_name,
       headline: parsedInput.data.channel_name,
-      primary_button_text: parsedInput.data.cta_button_text,
+      primary_button_text: ctaButtonText,
       primary_button_url: parsedInput.data.primary_button_url,
       default_event_name: parsedInput.data.default_click_event,
       channel_name: parsedInput.data.channel_name,
       logo_url: logoUpload?.publicUrl,
       logo_path: logoUpload?.path,
       subscriber_count: parsedInput.data.subscriber_count ?? null,
-      top_notice_text:
-        parsedInput.data.top_notice_text ??
-        "Don't have Telegram yet? Try it now!",
-      support_line_1: parsedInput.data.support_line_1,
-      support_line_2: parsedInput.data.support_line_2,
+      top_notice_text: topNoticeText,
+      support_line_1: supportLine1,
+      support_line_2: supportLine2,
       is_countdown_enabled: parsedInput.data.is_countdown_enabled,
       countdown_seconds: parsedInput.data.countdown_seconds,
       urgency_text: parsedInput.data.urgency_text,
-      footer_note: parsedInput.data.footer_note,
-      cta_button_text: parsedInput.data.cta_button_text,
+      footer_note: footerNote,
+      cta_button_text: ctaButtonText,
     });
 
     await createMetaTrackingProfile({

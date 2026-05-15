@@ -14,6 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DEFAULT_CTA_BUTTON_TEXT,
+  DEFAULT_FOOTER_NOTE,
+  DEFAULT_SUPPORT_LINE_1,
+  DEFAULT_SUPPORT_LINE_2,
+  DEFAULT_TOP_NOTICE_TEXT,
+} from "@/lib/landing-page-defaults";
 import type { Client } from "@/types/digifixx";
 
 type LandingPageFormProps = {
@@ -204,7 +211,7 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
             <Input
               id="top_notice_text"
               name="top_notice_text"
-              defaultValue="Don't have Telegram yet? Try it now!"
+              defaultValue={DEFAULT_TOP_NOTICE_TEXT}
               className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
             />
             <p className="text-xs leading-5 text-[#64748B]">
@@ -225,7 +232,8 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
             <Input
               id="support_line_1"
               name="support_line_1"
-              placeholder="Start your trading journey with research-backed market education."
+              defaultValue={DEFAULT_SUPPORT_LINE_1}
+              placeholder={DEFAULT_SUPPORT_LINE_1}
               className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
             />
             <FieldError message={state.fieldErrors?.support_line_1} />
@@ -241,7 +249,8 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
             <Input
               id="support_line_2"
               name="support_line_2"
-              placeholder="Join the Telegram channel for updates and learning content."
+              defaultValue={DEFAULT_SUPPORT_LINE_2}
+              placeholder={DEFAULT_SUPPORT_LINE_2}
               className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
             />
             <FieldError message={state.fieldErrors?.support_line_2} />
@@ -259,8 +268,7 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
             <Input
               id="cta_button_text"
               name="cta_button_text"
-              required
-              defaultValue="VIEW IN TELEGRAM"
+              defaultValue={DEFAULT_CTA_BUTTON_TEXT}
               className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
             />
             <FieldError message={state.fieldErrors?.cta_button_text} />
@@ -295,7 +303,8 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
           <Textarea
             id="footer_note"
             name="footer_note"
-            placeholder="If you have Telegram, you can view and join this channel right away."
+            defaultValue={DEFAULT_FOOTER_NOTE}
+            placeholder={DEFAULT_FOOTER_NOTE}
             className="min-h-24 rounded-[10px] border-[#E2E8F0] bg-white text-sm"
           />
           <FieldError message={state.fieldErrors?.footer_note} />
