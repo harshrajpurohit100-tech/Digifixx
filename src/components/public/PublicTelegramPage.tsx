@@ -8,6 +8,7 @@ import {
   DEFAULT_SUPPORT_LINE_1,
   DEFAULT_SUPPORT_LINE_2,
   DEFAULT_TOP_NOTICE_TEXT,
+  DEFAULT_CTA_INSTRUCTION_LINE,
 } from "@/lib/landing-page-defaults";
 import { getTelegramDownloadUrl } from "@/lib/telegram";
 import { isSafeHttpUrl } from "@/lib/url";
@@ -96,6 +97,10 @@ export function PublicTelegramPage({ page }: PublicTelegramPageProps) {
             <CheckCircle2 className="size-3.5" aria-hidden="true" />
             Secure Telegram redirect
           </div>
+
+          <p className="mt-5 text-center text-[14px] font-[800] leading-[1.4] text-[#0F172A] sm:text-[15px]">
+            {DEFAULT_CTA_INSTRUCTION_LINE}
+          </p>
 
           <div className="mt-5 flex justify-center">
             {hasValidTelegramUrl ? (

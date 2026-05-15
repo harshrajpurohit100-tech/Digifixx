@@ -1,8 +1,10 @@
 export const DEFAULT_SUPPORT_LINE_1 =
-  "Join the official Telegram channel for timely market updates and learning content.";
+  "📈 Get Daily 4–5 Nifty & Bank Nifty Trading Calls Absolutely Free";
 
 export const DEFAULT_SUPPORT_LINE_2 =
-  "Get quick updates, educational insights, and important announcements in one place.";
+  "🚀 Join India’s Fast Growing Trading Community Before Access Closes.";
+
+export const DEFAULT_CTA_INSTRUCTION_LINE = "👇🏻 Click Below To Join Free Telegram Channel 👇🏻";
 
 export const DEFAULT_TOP_NOTICE_TEXT =
   "Don't have Telegram yet? Try it now!";
