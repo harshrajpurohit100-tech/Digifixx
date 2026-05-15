@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Digifixx",
-  description: "Desktop admin foundation for Digifixx landing pages.",
+  title: "Digifixx Admin",
+  description:
+    "Desktop admin panel for managing clients, landing pages, tracking, and analytics.",
 };
 
 export default function RootLayout({
