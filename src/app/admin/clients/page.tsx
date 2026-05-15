@@ -6,6 +6,10 @@ import { SectionHeader } from "@/components/admin/SectionHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  getAdminDisplayUser,
+  requireAdminUser,
+} from "@/lib/auth/get-admin-user";
+import {
   Table,
   TableBody,
   TableCell,
@@ -13,6 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+export const dynamic = "force-dynamic";
 
 const clients = [
   {
@@ -58,11 +64,14 @@ function ClientStatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function ClientsPage() {
+export default async function ClientsPage() {
+  const adminUser = await requireAdminUser();
+
   return (
     <AdminShell
       title="Clients"
       description="Manage client workspaces, tracking profiles, and landing page ownership."
+      user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <SectionHeader

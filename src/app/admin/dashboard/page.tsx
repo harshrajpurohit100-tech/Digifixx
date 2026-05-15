@@ -14,6 +14,12 @@ import { SectionHeader } from "@/components/admin/SectionHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  getAdminDisplayUser,
+  requireAdminUser,
+} from "@/lib/auth/get-admin-user";
+
+export const dynamic = "force-dynamic";
 
 const activityRows = [
   {
@@ -63,11 +69,14 @@ function StatusBadge({ status, tone }: { status: string; tone: string }) {
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const adminUser = await requireAdminUser();
+
   return (
     <AdminShell
       title="Dashboard"
       description="Operational overview for clients, landing pages, tracking, and conversions."
+      user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-4 gap-4">

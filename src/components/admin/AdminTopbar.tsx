@@ -1,9 +1,16 @@
+import { logoutAction } from "@/lib/auth/actions";
+
 type AdminTopbarProps = {
   title: string;
   description?: string;
+  user: {
+    name: string;
+    email: string;
+    role: string;
+  };
 };
 
-export function AdminTopbar({ title, description }: AdminTopbarProps) {
+export function AdminTopbar({ title, description, user }: AdminTopbarProps) {
   return (
     <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-[#E2E8F0] bg-white px-7">
       <div>
@@ -22,17 +29,25 @@ export function AdminTopbar({ title, description }: AdminTopbarProps) {
         </span>
         <div className="flex items-center gap-3">
           <div className="flex size-8 items-center justify-center rounded-full bg-[#0F172A] text-xs font-bold text-white">
-            A
+            {user.name.charAt(0).toUpperCase()}
           </div>
           <div>
             <p className="text-[13px] font-semibold leading-4 text-[#0F172A]">
-              Admin
+              {user.name}
             </p>
             <p className="mt-0.5 text-[11px] leading-4 text-[#64748B]">
-              Super Admin
+              {user.role}
             </p>
           </div>
         </div>
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="h-8 rounded-[10px] border border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#475569] transition-colors hover:bg-[#F8FAFC] hover:text-[#0F172A]"
+          >
+            Logout
+          </button>
+        </form>
       </div>
     </header>
   );

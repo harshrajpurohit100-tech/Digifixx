@@ -2,6 +2,12 @@ import { Badge } from "@/components/ui/badge";
 
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminShell } from "@/components/admin/AdminShell";
+import {
+  getAdminDisplayUser,
+  requireAdminUser,
+} from "@/lib/auth/get-admin-user";
+
+export const dynamic = "force-dynamic";
 
 const settingsCards = [
   {
@@ -29,11 +35,14 @@ const settingsCards = [
   },
 ];
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const adminUser = await requireAdminUser();
+
   return (
     <AdminShell
       title="Settings"
       description="Configure workspace, security, tracking defaults, and access rules."
+      user={getAdminDisplayUser(adminUser)}
     >
       <div className="grid grid-cols-2 gap-4">
         {settingsCards.map((card) => (

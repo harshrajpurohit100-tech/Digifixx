@@ -1,11 +1,29 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { DesktopOnlyGuard } from "@/components/admin/DesktopOnlyGuard";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { LoginForm } from "@/components/admin/LoginForm";
+import { getAdminUser } from "@/lib/auth/get-admin-user";
 
-export default function AdminLoginPage() {
+export const dynamic = "force-dynamic";
+
+type AdminLoginPageProps = {
+  searchParams?: Promise<{
+    next?: string | string[];
+  }>;
+};
+
+export default async function AdminLoginPage({
+  searchParams,
+}: AdminLoginPageProps) {
+  const { user } = await getAdminUser();
+  if (user) {
+    redirect("/admin/dashboard");
+  }
+
+  const resolvedSearchParams = await searchParams;
+  const nextParam = resolvedSearchParams?.next;
+  const nextPath = Array.isArray(nextParam) ? nextParam[0] : nextParam;
+
   return (
     <DesktopOnlyGuard>
       <main className="flex min-h-screen items-center justify-center bg-[#F8FAFC] p-8">
@@ -33,36 +51,7 @@ export default function AdminLoginPage() {
             </p>
           </div>
 
-          <form className="mt-7 flex flex-col gap-5">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email" className="text-[13px] text-[#0F172A]">
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@digifixx.in"
-                className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password" className="text-[13px] text-[#0F172A]">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
-              />
-            </div>
-            <Button
-              asChild
-              className="mt-1 h-[42px] w-full rounded-[10px] bg-[#0F172A] text-sm font-semibold text-white hover:bg-[#1E293B]"
-            >
-              <Link href="/admin/dashboard">Sign in</Link>
-            </Button>
-          </form>
+          <LoginForm nextPath={nextPath} />
 
           <p className="mt-6 text-center text-xs leading-5 text-[#64748B]">
             Secure admin access for authorized users only.

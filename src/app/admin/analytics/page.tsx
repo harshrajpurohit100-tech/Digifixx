@@ -10,6 +10,12 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { SectionHeader } from "@/components/admin/SectionHeader";
 import { StatCard } from "@/components/admin/StatCard";
+import {
+  getAdminDisplayUser,
+  requireAdminUser,
+} from "@/lib/auth/get-admin-user";
+
+export const dynamic = "force-dynamic";
 
 const eventRows = [
   { event: "PageView", code: "A8xK92LmQ", time: "12 seconds ago" },
@@ -25,11 +31,14 @@ const topPages = [
   { code: "Q5nT81BxC", visits: "0", rate: "0.00%" },
 ];
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  const adminUser = await requireAdminUser();
+
   return (
     <AdminShell
       title="Analytics"
       description="Track visits, conversions, UTM performance, and event delivery."
+      user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-4 gap-4">

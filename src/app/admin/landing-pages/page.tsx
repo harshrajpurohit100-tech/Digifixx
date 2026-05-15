@@ -6,6 +6,10 @@ import { SectionHeader } from "@/components/admin/SectionHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  getAdminDisplayUser,
+  requireAdminUser,
+} from "@/lib/auth/get-admin-user";
+import {
   Table,
   TableBody,
   TableCell,
@@ -13,6 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+export const dynamic = "force-dynamic";
 
 const landingPages = [
   {
@@ -83,11 +89,14 @@ function PixelStatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function LandingPagesPage() {
+export default async function LandingPagesPage() {
+  const adminUser = await requireAdminUser();
+
   return (
     <AdminShell
       title="Landing Pages"
       description="Create, publish, and monitor public coded landing pages."
+      user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <SectionHeader
