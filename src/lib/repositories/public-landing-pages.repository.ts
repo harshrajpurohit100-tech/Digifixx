@@ -22,8 +22,27 @@ const publicLandingPageColumns = `
   primary_button_url,
   disclaimer,
   status,
-  updated_at
+  updated_at,
+  meta_tracking_profiles:meta_tracking_profiles(
+    pixel_id,
+    default_pageview_event,
+    default_click_event,
+    is_active,
+    updated_at
+  )
 `;
+
+type PublicLandingPageRelationRow = Omit<PublicLandingPage, "tracking"> & {
+  meta_tracking_profiles:
+    | {
+        pixel_id: string;
+        default_pageview_event: import("@/types/digifixx").TrackingEventName;
+        default_click_event: import("@/types/digifixx").TrackingEventName;
+        is_active: boolean;
+        updated_at: string;
+      }[]
+    | null;
+};
 
 export async function getActivePublicLandingPageByCode(publicCode: string) {
   const supabase = getSupabaseAdminClient();
@@ -38,5 +57,35 @@ export async function getActivePublicLandingPageByCode(publicCode: string) {
     throw error;
   }
 
-  return data as PublicLandingPage | null;
+  if (!data) {
+    return null;
+  }
+
+  const row = data as unknown as PublicLandingPageRelationRow;
+  const profiles = row.meta_tracking_profiles || [];
+  
+  // Sort descending by updated_at
+  const activeProfiles = profiles
+    .filter((p) => p.is_active)
+    .sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    );
+
+  const activeProfile = activeProfiles[0];
+
+  const tracking = activeProfile
+    ? {
+        pixel_id: activeProfile.pixel_id,
+        default_pageview_event: activeProfile.default_pageview_event,
+        default_click_event: activeProfile.default_click_event,
+      }
+    : null;
+
+  const { meta_tracking_profiles: _, ...rest } = row;
+
+  return {
+    ...rest,
+    tracking,
+  } as PublicLandingPage;
 }

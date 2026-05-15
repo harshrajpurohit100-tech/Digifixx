@@ -1,6 +1,8 @@
-import { CheckCircle2, Send } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 import { CountdownText } from "@/components/public/CountdownText";
+import { TelegramCtaButton } from "@/components/public/TelegramCtaButton";
+import { MetaPixel } from "@/components/public/meta/MetaPixel";
 import { TelegramLogo } from "@/components/public/TelegramLogo";
 import {
   DEFAULT_CTA_BUTTON_TEXT,
@@ -52,6 +54,14 @@ export function PublicTelegramPage({ page }: PublicTelegramPageProps) {
 
   return (
     <main className="min-h-screen bg-[#F4F7FB] text-[#0F172A]">
+      {page.tracking?.pixel_id ? (
+        <MetaPixel
+          pixelId={page.tracking.pixel_id}
+          pageViewEventName={page.tracking.default_pageview_event}
+          landingPageCode={page.public_code}
+        />
+      ) : null}
+
       <a
         href={telegramDownloadUrl}
         target="_blank"
@@ -103,25 +113,13 @@ export function PublicTelegramPage({ page }: PublicTelegramPageProps) {
           </p>
 
           <div className="mt-5 flex justify-center">
-            {hasValidTelegramUrl ? (
-              <a
-                href={page.primary_button_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-[50px] w-full max-w-[340px] items-center justify-center gap-2 rounded-[14px] bg-[#0284C7] px-[22px] text-[15px] font-extrabold text-white shadow-[0_10px_20px_rgba(2,132,199,0.22)] transition-colors hover:bg-[#0369A1] active:bg-[#075985] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0284C7]"
-              >
-                <Send className="size-[17px]" aria-hidden="true" />
-                {ctaText}
-              </a>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="inline-flex h-[50px] w-full max-w-[340px] cursor-not-allowed items-center justify-center rounded-[14px] bg-[#94A3B8] px-[22px] text-[15px] font-extrabold text-white"
-              >
-                Telegram link unavailable
-              </button>
-            )}
+            <TelegramCtaButton
+              href={page.primary_button_url}
+              label={ctaText}
+              publicCode={page.public_code}
+              hasValidUrl={hasValidTelegramUrl}
+              tracking={page.tracking}
+            />
           </div>
 
           <p className="mx-auto mt-5 max-w-[400px] text-center text-[12.5px] leading-[1.5] text-[#64748B] sm:text-[13px]">

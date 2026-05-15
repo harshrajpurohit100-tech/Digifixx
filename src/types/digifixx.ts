@@ -141,7 +141,13 @@ export type PublicLandingPage = Pick<
   | "disclaimer"
   | "status"
   | "updated_at"
->;
+> & {
+  tracking?: {
+    pixel_id: string;
+    default_pageview_event: TrackingEventName;
+    default_click_event: TrackingEventName;
+  } | null;
+};
 
 export type MetaTrackingProfile = {
   id: string;
