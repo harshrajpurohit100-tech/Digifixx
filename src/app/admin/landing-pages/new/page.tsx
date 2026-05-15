@@ -11,7 +11,6 @@ import {
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
 import { listClients } from "@/lib/repositories/clients.repository";
-import type { Client } from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
 
@@ -51,15 +50,19 @@ function PreviewStructureCard() {
 
 export default async function NewLandingPagePage() {
   const adminUser = await requireAdminUser();
-  let clients: Pick<Client, "id" | "name">[] = [];
+  let clientOptions: { id: string; name: string; status: "active" | "paused" | "archived" }[] = [];
+  let clientsError = false;
 
   try {
-    clients = (await listClients()).map((client) => ({
+    const fetchedClients = await listClients();
+    clientOptions = fetchedClients.map((client) => ({
       id: client.id,
       name: client.name,
+      status: client.status,
     }));
   } catch (error) {
     console.error("Unable to load clients for landing page form", error);
+    clientsError = true;
   }
 
   return (
@@ -88,7 +91,16 @@ export default async function NewLandingPagePage() {
 
         <div className="grid grid-cols-[2fr_1fr] gap-6">
           <AdminCard padding="lg">
-            <LandingPageForm clients={clients} />
+            {clientsError ? (
+              <div>
+                <h3 className="font-bold text-[#0F172A]">Unable to load clients</h3>
+                <p className="mt-1 text-sm text-[#475569]">
+                  There was a problem loading client data. Check Supabase configuration and RLS policies.
+                </p>
+              </div>
+            ) : (
+              <LandingPageForm clients={clientOptions} />
+            )}
           </AdminCard>
           <PreviewStructureCard />
         </div>

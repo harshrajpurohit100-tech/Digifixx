@@ -21,10 +21,14 @@ import {
   DEFAULT_SUPPORT_LINE_2,
   DEFAULT_TOP_NOTICE_TEXT,
 } from "@/lib/landing-page-defaults";
-import type { Client } from "@/types/digifixx";
+export type ClientOption = {
+  id: string;
+  name: string;
+  status: "active" | "paused" | "archived";
+};
 
 type LandingPageFormProps = {
-  clients: Pick<Client, "id" | "name">[];
+  clients: ClientOption[];
 };
 
 const initialState: CreateLandingPageActionState = {};

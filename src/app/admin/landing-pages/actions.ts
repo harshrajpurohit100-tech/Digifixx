@@ -82,10 +82,12 @@ export async function createLandingPageAction(
     return {
       error: "Please check the highlighted fields and try again.",
       fieldErrors: Object.fromEntries(
-        Object.entries(flattenedErrors).map(([field, messages]) => [
-          field,
-          messages?.[0],
-        ])
+        Object.entries(flattenedErrors)
+          .filter(([, messages]) => messages && messages.length > 0)
+          .map(([field, messages]) => [
+            field,
+            messages![0],
+          ])
       ),
     };
   }
@@ -98,6 +100,12 @@ export async function createLandingPageAction(
       fieldErrors: {
         client_id: "Select a valid client.",
       },
+    };
+  }
+
+  if (parsedInput.data.raw_capi_access_token && !process.env.ENCRYPTION_SECRET) {
+    return {
+      error: "Server encryption is not configured.",
     };
   }
 
@@ -146,14 +154,15 @@ export async function createLandingPageAction(
   } catch (error) {
     console.error("Unable to upload landing page logo", error);
     return {
-      error: "There was a problem uploading the logo. Try again or continue without a logo.",
+      error: "Logo upload failed. Please verify the landing-assets storage bucket.",
     };
   }
 
-  let createdLandingPage;
+  let createdLandingPageId: string;
+  let createdLandingPageDetails;
 
   try {
-    createdLandingPage = await createLandingPage({
+    const createdLandingPage = await createLandingPage({
       client_id: parsedInput.data.client_id,
       internal_name: parsedInput.data.internal_name,
       public_code: publicCode,
@@ -176,6 +185,9 @@ export async function createLandingPageAction(
       footer_note: footerNote,
       cta_button_text: ctaButtonText,
     });
+
+    createdLandingPageId = createdLandingPage.id;
+    createdLandingPageDetails = createdLandingPage;
 
     await createMetaTrackingProfile({
       client_id: parsedInput.data.client_id,
@@ -204,19 +216,23 @@ export async function createLandingPageAction(
     };
   }
 
-  await createAuditLog({
-    action: "create",
-    entity_type: "landing_page",
-    entity_id: createdLandingPage.id,
-    entity_label: createdLandingPage.internal_name,
-    new_values: {
-      id: createdLandingPage.id,
-      client_id: createdLandingPage.client_id,
-      public_code: createdLandingPage.public_code,
-      channel_name: createdLandingPage.channel_name,
-      status: createdLandingPage.status,
-    },
-  });
+  try {
+    await createAuditLog({
+      action: "create",
+      entity_type: "landing_page",
+      entity_id: createdLandingPageDetails.id,
+      entity_label: createdLandingPageDetails.internal_name,
+      new_values: {
+        id: createdLandingPageDetails.id,
+        client_id: createdLandingPageDetails.client_id,
+        public_code: createdLandingPageDetails.public_code,
+        channel_name: createdLandingPageDetails.channel_name,
+        status: createdLandingPageDetails.status,
+      },
+    });
+  } catch (error) {
+    console.error("Unable to create audit log", error);
+  }
 
-  redirect(`/admin/landing-pages/${createdLandingPage.id}`);
+  redirect(`/admin/landing-pages/${createdLandingPageId}`);
 }
