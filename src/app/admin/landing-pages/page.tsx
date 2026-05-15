@@ -1,172 +1,151 @@
-import { Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
+import Link from "next/link";
 
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { LandingPagesTable } from "@/components/admin/LandingPagesTable";
 import { SectionHeader } from "@/components/admin/SectionHeader";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   getAdminDisplayUser,
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { listLandingPagesWithClientAndTracking } from "@/lib/repositories/landing-pages.repository";
+import type {
+  LandingPageStatus,
+  LandingPageWithClientAndTracking,
+} from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
 
-const landingPages = [
-  {
-    code: "A8xK92LmQ",
-    client: "Nova Media",
-    status: "Active",
-    visits: "12,842",
-    conversions: "2,104",
-    pixelStatus: "Connected",
-    lastUpdated: "Today",
-  },
-  {
-    code: "P7mQ2xLpB",
-    client: "Apex Growth",
-    status: "Active",
-    visits: "8,390",
-    conversions: "1,288",
-    pixelStatus: "Connected",
-    lastUpdated: "Yesterday",
-  },
-  {
-    code: "V8zR42AkL",
-    client: "Northline Ads",
-    status: "Paused",
-    visits: "3,219",
-    conversions: "402",
-    pixelStatus: "Missing CAPI",
-    lastUpdated: "3 days ago",
-  },
-  {
-    code: "Q5nT81BxC",
-    client: "Urban Scale",
-    status: "Draft",
-    visits: "0",
-    conversions: "0",
-    pixelStatus: "Not configured",
-    lastUpdated: "1 week ago",
-  },
-];
+type SummaryCardProps = {
+  label: string;
+  value: number;
+};
 
-function StatusBadge({ status }: { status: string }) {
-  const className =
-    status === "Active"
-      ? "border-[#BBF7D0] bg-[#ECFDF5] text-[#16A34A]"
-      : status === "Paused"
-        ? "border-[#FDE68A] bg-[#FFFBEB] text-[#D97706]"
-        : "border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B]";
-
+function SummaryCard({ label, value }: SummaryCardProps) {
   return (
-    <Badge variant="outline" className={className}>
-      {status}
-    </Badge>
+    <AdminCard className="min-h-[96px]" padding="md">
+      <p className="text-[13px] font-medium text-[#64748B]">{label}</p>
+      <p className="mt-3 text-[26px] font-bold leading-none tracking-tight text-[#0F172A]">
+        {value}
+      </p>
+    </AdminCard>
   );
 }
 
-function PixelStatusBadge({ status }: { status: string }) {
-  const className =
-    status === "Connected"
-      ? "border-[#BBF7D0] bg-[#ECFDF5] text-[#16A34A]"
-      : status === "Missing CAPI"
-        ? "border-[#FDE68A] bg-[#FFFBEB] text-[#D97706]"
-        : "border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B]";
+function getPageCountByStatus(
+  pages: LandingPageWithClientAndTracking[],
+  status: LandingPageStatus
+) {
+  return pages.filter((page) => page.status === status).length;
+}
 
+function LandingPageLoadError() {
   return (
-    <Badge variant="outline" className={className}>
-      {status}
-    </Badge>
+    <AdminCard>
+      <div className="max-w-xl">
+        <h2 className="text-lg font-bold text-[#0F172A]">
+          Unable to load landing pages
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[#64748B]">
+          There was a problem loading landing page data. Check Supabase
+          configuration and RLS policies.
+        </p>
+      </div>
+    </AdminCard>
   );
 }
 
 export default async function LandingPagesPage() {
   const adminUser = await requireAdminUser();
+  let landingPages: LandingPageWithClientAndTracking[] = [];
+  let hasLoadError = false;
+
+  try {
+    landingPages = await listLandingPagesWithClientAndTracking();
+  } catch (error) {
+    console.error("Unable to load landing pages", error);
+    hasLoadError = true;
+  }
 
   return (
     <AdminShell
       title="Landing Pages"
-      description="Create, publish, and monitor public coded landing pages."
+      description="Create coded Telegram landing pages with separate client tracking and Meta CAPI configuration."
       user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <SectionHeader
           title="Landing Pages"
-          description="Public code routes will be connected in a later phase."
+          description="Create coded Telegram landing pages with separate client tracking and Meta CAPI configuration."
           action={
             <Button
-              disabled
-              className="h-9 rounded-[10px] bg-[#2563EB] px-3 text-sm font-semibold text-white"
+              asChild
+              className="h-[38px] rounded-[10px] bg-[#2563EB] px-3 text-sm font-semibold text-white hover:bg-[#1D4ED8]"
             >
-              <Plus data-icon="inline-start" />
-              Create Landing Page
+              <Link href="/admin/landing-pages/new">
+                <Plus data-icon="inline-start" />
+                Create Landing Page
+              </Link>
             </Button>
           }
         />
 
-        <AdminCard padding="none">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-[#E2E8F0] hover:bg-transparent">
-                {[
-                  "Public Code",
-                  "Client",
-                  "Status",
-                  "Visits",
-                  "Conversions",
-                  "Pixel Status",
-                  "Last Updated",
-                ].map((heading) => (
-                  <TableHead
-                    key={heading}
-                    className="h-12 px-5 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]"
-                  >
-                    {heading}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {landingPages.map((page) => (
-                <TableRow
-                  key={page.code}
-                  className="border-[#E2E8F0] hover:bg-[#F8FAFC]"
-                >
-                  <TableCell className="px-5 py-4 font-mono text-sm font-semibold text-[#0F172A]">
-                    {page.code}
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-sm text-[#475569]">
-                    {page.client}
-                  </TableCell>
-                  <TableCell className="px-5 py-4">
-                    <StatusBadge status={page.status} />
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-sm text-[#475569]">
-                    {page.visits}
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-sm text-[#475569]">
-                    {page.conversions}
-                  </TableCell>
-                  <TableCell className="px-5 py-4">
-                    <PixelStatusBadge status={page.pixelStatus} />
-                  </TableCell>
-                  <TableCell className="px-5 py-4 text-sm text-[#64748B]">
-                    {page.lastUpdated}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </AdminCard>
+        <div className="grid grid-cols-4 gap-4">
+          <SummaryCard label="Total Pages" value={landingPages.length} />
+          <SummaryCard
+            label="Active"
+            value={getPageCountByStatus(landingPages, "active")}
+          />
+          <SummaryCard
+            label="Draft"
+            value={getPageCountByStatus(landingPages, "draft")}
+          />
+          <SummaryCard
+            label="Paused"
+            value={getPageCountByStatus(landingPages, "paused")}
+          />
+        </div>
+
+        {hasLoadError ? (
+          <LandingPageLoadError />
+        ) : (
+          <AdminCard padding="none">
+            <div className="border-b border-[#E2E8F0] p-5">
+              <h2 className="text-lg font-bold leading-tight text-[#0F172A]">
+                Landing Page Directory
+              </h2>
+              <p className="mt-1 text-[13px] leading-5 text-[#64748B]">
+                Public coded pages generated for clients and Telegram
+                campaigns.
+              </p>
+            </div>
+            {landingPages.length > 0 ? (
+              <LandingPagesTable landingPages={landingPages} />
+            ) : (
+              <div className="p-5">
+                <EmptyState
+                  icon={FileText}
+                  title="No landing pages yet"
+                  description="Create your first coded Telegram landing page and connect its Meta tracking profile."
+                  action={
+                    <Button
+                      asChild
+                      className="h-[38px] rounded-[10px] bg-[#2563EB] px-3 text-sm font-semibold text-white hover:bg-[#1D4ED8]"
+                    >
+                      <Link href="/admin/landing-pages/new">
+                        <Plus data-icon="inline-start" />
+                        Create Landing Page
+                      </Link>
+                    </Button>
+                  }
+                />
+              </div>
+            )}
+          </AdminCard>
+        )}
       </div>
     </AdminShell>
   );

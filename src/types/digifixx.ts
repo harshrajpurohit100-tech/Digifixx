@@ -83,11 +83,41 @@ export type LandingPage = {
   default_event_name: TrackingEventName;
   utm_source_default: string | null;
   utm_campaign_default: string | null;
+  channel_name: string | null;
+  logo_url: string | null;
+  logo_path: string | null;
+  subscriber_count: number | null;
+  top_notice_text: string;
+  support_line_1: string | null;
+  support_line_2: string | null;
+  urgency_text: string | null;
+  is_countdown_enabled: boolean;
+  countdown_seconds: number;
+  footer_note: string | null;
+  maintained_by_text: string | null;
+  cta_button_text: string;
   published_at: string | null;
   archived_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type SafeMetaTrackingProfile = Omit<
+  MetaTrackingProfile,
+  "capi_access_token_encrypted"
+>;
+
+export type LandingPageWithClientAndTracking = LandingPage & {
+  client: Pick<Client, "id" | "name"> | null;
+  tracking_profile: Pick<
+    SafeMetaTrackingProfile,
+    | "id"
+    | "pixel_id"
+    | "capi_token_last4"
+    | "is_active"
+    | "default_click_event"
+  > | null;
 };
 
 export type MetaTrackingProfile = {

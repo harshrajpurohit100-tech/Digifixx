@@ -19,6 +19,14 @@ export const trackingEventNameSchema = z.enum([
   "Custom",
 ]);
 
+export const defaultClickEventSchema = z.enum([
+  "Lead",
+  "Contact",
+  "Subscribe",
+  "CompleteRegistration",
+  "ButtonClick",
+]);
+
 const optionalText = (max: number) =>
   z
     .string()
@@ -79,6 +87,50 @@ export const updateMetaTrackingTokenSchema = z.object({
   raw_capi_access_token: z.string().trim().min(10).max(2000),
 });
 
+const optionalNumber = z.preprocess(
+  (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return undefined;
+    }
+
+    return Number(value);
+  },
+  z.number().int().nonnegative().optional()
+);
+
+const countdownSeconds = z.preprocess(
+  (value) => {
+    if (value === "" || value === null || value === undefined) {
+      return 0;
+    }
+
+    return Number(value);
+  },
+  z.number().int().min(0).max(86400).default(0)
+);
+
+const formBoolean = z.preprocess((value) => value === "on" || value === true, z.boolean());
+
+export const createLandingPageWithTrackingSchema = z.object({
+  client_id: z.uuid(),
+  internal_name: z.string().trim().min(2).max(160),
+  channel_name: z.string().trim().min(2).max(120),
+  subscriber_count: optionalNumber,
+  support_line_1: optionalText(220),
+  support_line_2: optionalText(220),
+  top_notice_text: optionalText(160),
+  cta_button_text: z.string().trim().min(1).max(60),
+  primary_button_url: z.url(),
+  footer_note: optionalText(300),
+  is_countdown_enabled: formBoolean.default(false),
+  countdown_seconds: countdownSeconds,
+  urgency_text: optionalText(120),
+  pixel_id: z.string().trim().min(3).max(80),
+  raw_capi_access_token: optionalText(2000),
+  test_event_code: optionalText(120),
+  default_click_event: defaultClickEventSchema.default("Lead"),
+});
+
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type CreateLandingPageInput = z.infer<typeof createLandingPageSchema>;
 export type CreateMetaTrackingProfileInput = z.infer<
@@ -86,4 +138,7 @@ export type CreateMetaTrackingProfileInput = z.infer<
 >;
 export type UpdateMetaTrackingTokenInput = z.infer<
   typeof updateMetaTrackingTokenSchema
+>;
+export type CreateLandingPageWithTrackingInput = z.infer<
+  typeof createLandingPageWithTrackingSchema
 >;
