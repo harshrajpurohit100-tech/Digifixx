@@ -1,0 +1,207 @@
+export type ClientStatus = "active" | "paused" | "archived";
+
+export type LandingPageStatus = "draft" | "active" | "paused" | "archived";
+
+export type LandingPageTemplate =
+  | "telegram_join"
+  | "whatsapp_lead"
+  | "simple_lead_form"
+  | "custom_basic";
+
+export type TrackingEventName =
+  | "PageView"
+  | "ViewContent"
+  | "Lead"
+  | "Contact"
+  | "Subscribe"
+  | "CompleteRegistration"
+  | "ButtonClick"
+  | "FormSubmit"
+  | "Custom";
+
+export type CapiDeliveryStatus =
+  | "not_sent"
+  | "pending"
+  | "sent"
+  | "failed"
+  | "skipped";
+
+export type LeadStatus =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "rejected"
+  | "converted";
+
+export type AuditAction =
+  | "create"
+  | "update"
+  | "delete"
+  | "archive"
+  | "publish"
+  | "pause"
+  | "regenerate_code"
+  | "login"
+  | "logout"
+  | "config_change"
+  | "token_update";
+
+export type JsonRecord = Record<string, unknown>;
+
+export type Client = {
+  id: string;
+  name: string;
+  internal_code: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  status: ClientStatus;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LandingPage = {
+  id: string;
+  client_id: string;
+  internal_name: string;
+  public_code: string;
+  template: LandingPageTemplate;
+  status: LandingPageStatus;
+  page_title: string | null;
+  headline: string;
+  subheadline: string | null;
+  description: string | null;
+  primary_button_text: string;
+  primary_button_url: string;
+  secondary_button_text: string | null;
+  secondary_button_url: string | null;
+  disclaimer: string | null;
+  background_style: string;
+  custom_css: string | null;
+  default_event_name: TrackingEventName;
+  utm_source_default: string | null;
+  utm_campaign_default: string | null;
+  published_at: string | null;
+  archived_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MetaTrackingProfile = {
+  id: string;
+  client_id: string;
+  landing_page_id: string | null;
+  profile_name: string;
+  meta_business_id: string | null;
+  meta_ad_account_id: string | null;
+  pixel_id: string;
+  capi_access_token_encrypted: string | null;
+  capi_token_last4: string | null;
+  test_event_code: string | null;
+  default_pageview_event: TrackingEventName;
+  default_click_event: TrackingEventName;
+  is_active: boolean;
+  last_verified_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type VisitorSession = {
+  id: string;
+  landing_page_id: string;
+  visitor_id: string;
+  session_id: string;
+  ip_hash: string | null;
+  user_agent: string | null;
+  browser: string | null;
+  os: string | null;
+  device_type: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  referrer: string | null;
+  first_utm_source: string | null;
+  first_utm_medium: string | null;
+  first_utm_campaign: string | null;
+  first_utm_content: string | null;
+  first_utm_term: string | null;
+  first_seen_at: string;
+  last_seen_at: string;
+};
+
+export type TrackingEvent = {
+  id: string;
+  client_id: string | null;
+  landing_page_id: string;
+  visitor_session_id: string | null;
+  event_name: TrackingEventName;
+  custom_event_name: string | null;
+  event_id: string;
+  event_source_url: string | null;
+  action_source: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  utm_adset: string | null;
+  utm_ad: string | null;
+  referrer: string | null;
+  ip_hash: string | null;
+  user_agent: string | null;
+  browser: string | null;
+  os: string | null;
+  device_type: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  meta_pixel_id: string | null;
+  capi_delivery_status: CapiDeliveryStatus;
+  capi_response: JsonRecord | null;
+  capi_error: string | null;
+  capi_sent_at: string | null;
+  metadata: JsonRecord;
+  created_at: string;
+};
+
+export type Lead = {
+  id: string;
+  client_id: string | null;
+  landing_page_id: string;
+  visitor_session_id: string | null;
+  tracking_event_id: string | null;
+  status: LeadStatus;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  message: string | null;
+  form_data: JsonRecord;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  referrer: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AuditLog = {
+  id: string;
+  actor_user_id: string | null;
+  actor_email: string | null;
+  action: AuditAction;
+  entity_type: string;
+  entity_id: string | null;
+  entity_label: string | null;
+  old_values: JsonRecord | null;
+  new_values: JsonRecord | null;
+  metadata: JsonRecord;
+  ip_hash: string | null;
+  user_agent: string | null;
+  created_at: string;
+};
