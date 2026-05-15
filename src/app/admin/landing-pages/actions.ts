@@ -92,7 +92,18 @@ export async function createLandingPageAction(
     };
   }
 
-  const selectedClient = await getClientById(parsedInput.data.client_id);
+  let selectedClient;
+  try {
+    selectedClient = await getClientById(parsedInput.data.client_id);
+  } catch (error) {
+    console.error("Unable to load client", error);
+    return {
+      error: "There was a problem loading the selected client.",
+      fieldErrors: {
+        client_id: "Could not verify client.",
+      },
+    };
+  }
 
   if (!selectedClient) {
     return {
@@ -124,7 +135,15 @@ export async function createLandingPageAction(
     };
   }
 
-  const publicCode = await generateUniquePublicCode();
+  let publicCode: string;
+  try {
+    publicCode = await generateUniquePublicCode();
+  } catch (error) {
+    console.error("Unable to generate public code", error);
+    return {
+      error: "There was a problem generating a unique code for the landing page.",
+    };
+  }
   let logoUpload: { path: string; publicUrl: string } | null = null;
   const supportLine1 = withDefault(
     parsedInput.data.support_line_1,
