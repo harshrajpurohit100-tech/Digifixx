@@ -7,6 +7,10 @@ import type {
   AnalyticsOverview,
   TopLandingPageAnalytics,
   RecentTrackingEvent,
+  AnalyticsLandingPageSelectorItem,
+  DetailedRecentTrackingEvent,
+  LandingPageAnalyticsDetail,
+  LandingPageStatus,
 } from "@/types/digifixx";
 import { getActivePublicLandingPageByCode } from "./public-landing-pages.repository";
 
@@ -334,4 +338,127 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
     topLandingPages,
     recentEvents,
   };
+}
+
+export async function getLandingPageAnalyticsDetail(
+  landingPageId: string
+): Promise<LandingPageAnalyticsDetail> {
+  const summary = await getLandingPageAnalyticsSummary(landingPageId);
+  const supabase = getSupabaseAdminClient();
+
+  // Fetch latest events for breakdowns (capped at 5000)
+  const { data: events } = await supabase
+    .from("tracking_events")
+    .select("event_name, utm_source, referrer, device_type, browser, created_at, id")
+    .eq("landing_page_id", landingPageId)
+    .order("created_at", { ascending: false })
+    .limit(5000);
+
+  const sourceMap: Record<string, { visits: number; conversions: number }> = {};
+  const deviceMap: Record<string, { visits: number; conversions: number }> = {};
+  const eventMap: Record<string, number> = {};
+  const recentEvents: DetailedRecentTrackingEvent[] = [];
+
+  const conversionEvents = [
+    "Lead",
+    "Contact",
+    "Subscribe",
+    "CompleteRegistration",
+    "ButtonClick",
+  ];
+
+  if (events) {
+    for (const ev of events) {
+      // Event breakdown
+      eventMap[ev.event_name] = (eventMap[ev.event_name] || 0) + 1;
+
+      // Source breakdown
+      let source = ev.utm_source || "Direct / Unknown";
+      if (source === "Direct / Unknown" && ev.referrer) {
+        try {
+          const url = new URL(ev.referrer);
+          source = url.hostname;
+        } catch {
+          // ignore invalid referrer
+        }
+      }
+      if (!sourceMap[source]) sourceMap[source] = { visits: 0, conversions: 0 };
+      if (ev.event_name === "PageView") sourceMap[source].visits++;
+      if (conversionEvents.includes(ev.event_name))
+        sourceMap[source].conversions++;
+
+      // Device breakdown
+      const device = ev.device_type || "unknown";
+      if (!deviceMap[device]) deviceMap[device] = { visits: 0, conversions: 0 };
+      if (ev.event_name === "PageView") deviceMap[device].visits++;
+      if (conversionEvents.includes(ev.event_name))
+        deviceMap[device].conversions++;
+
+      // Recent events (first 20)
+      if (recentEvents.length < 20) {
+        recentEvents.push({
+          id: ev.id,
+          event_name: ev.event_name,
+          device_type: ev.device_type,
+          browser: ev.browser,
+          utm_source: ev.utm_source,
+          referrer: ev.referrer,
+          created_at: ev.created_at,
+        });
+      }
+    }
+  }
+
+  return {
+    summary,
+    recentEvents,
+    sourceBreakdown: Object.entries(sourceMap)
+      .map(([source, stats]) => ({
+        source,
+        ...stats,
+      }))
+      .sort((a, b) => b.visits - a.visits),
+    deviceBreakdown: Object.entries(deviceMap)
+      .map(([device_type, stats]) => ({
+        device_type,
+        ...stats,
+      }))
+      .sort((a, b) => b.visits - a.visits),
+    eventBreakdown: Object.entries(eventMap)
+      .map(([event_name, count]) => ({
+        event_name,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+export async function listLandingPagesForAnalyticsSelector(): Promise<
+  AnalyticsLandingPageSelectorItem[]
+> {
+  const supabase = getSupabaseAdminClient();
+  const { data } = await supabase
+    .from("landing_pages")
+    .select("id, public_code, channel_name, internal_name, status, updated_at")
+    .order("status", { ascending: true })
+    .order("updated_at", { ascending: false });
+
+  const statusOrder = { active: 0, paused: 1, draft: 2, archived: 3 };
+
+  return (data || [])
+    .sort((a, b) => {
+      const orderA = statusOrder[a.status as keyof typeof statusOrder] ?? 99;
+      const orderB = statusOrder[b.status as keyof typeof statusOrder] ?? 99;
+      if (orderA !== orderB) return orderA - orderB;
+      return (
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+    })
+    .map((item) => ({
+      id: item.id,
+      public_code: item.public_code,
+      channel_name: item.channel_name,
+      internal_name: item.internal_name,
+      status: item.status as LandingPageStatus,
+    }));
 }

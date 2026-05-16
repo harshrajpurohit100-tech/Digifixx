@@ -305,3 +305,46 @@ export type AnalyticsOverview = {
   topLandingPages: TopLandingPageAnalytics[];
   recentEvents: RecentTrackingEvent[];
 };
+
+export type AnalyticsLandingPageSelectorItem = {
+  id: string;
+  public_code: string;
+  channel_name: string | null;
+  internal_name: string;
+  status: LandingPageStatus;
+};
+
+export type AnalyticsSourceBreakdown = {
+  source: string;
+  visits: number;
+  conversions: number;
+};
+
+export type AnalyticsDeviceBreakdown = {
+  device_type: string;
+  visits: number;
+  conversions: number;
+};
+
+export type AnalyticsEventBreakdown = {
+  event_name: string;
+  count: number;
+};
+
+export type DetailedRecentTrackingEvent = {
+  id: string;
+  event_name: string;
+  device_type: string | null;
+  browser: string | null;
+  utm_source: string | null;
+  referrer: string | null;
+  created_at: string;
+};
+
+export type LandingPageAnalyticsDetail = {
+  summary: LandingPageAnalyticsSummary;
+  recentEvents: DetailedRecentTrackingEvent[];
+  sourceBreakdown: AnalyticsSourceBreakdown[];
+  deviceBreakdown: AnalyticsDeviceBreakdown[];
+  eventBreakdown: AnalyticsEventBreakdown[];
+};
