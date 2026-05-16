@@ -1,176 +1,137 @@
 import {
-  CheckCircle2,
-  Clock3,
+  BarChart3,
   Eye,
   MousePointerClick,
   PanelsTopLeft,
+  Plus,
+  Settings2,
   Users,
 } from "lucide-react";
-import Link from "next/link";
 
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { DashboardStatCard } from "@/components/admin/dashboard/DashboardStatCard";
+import { QuickActionTile } from "@/components/admin/dashboard/QuickActionTile";
+import { RecentActivityCard } from "@/components/admin/dashboard/RecentActivityCard";
+import { TopLandingPagesCard } from "@/components/admin/dashboard/TopLandingPagesCard";
+import { TrackingHealthCard } from "@/components/admin/dashboard/TrackingHealthCard";
+import { TrafficOverviewChart } from "@/components/admin/dashboard/TrafficOverviewChart";
 import { SectionHeader } from "@/components/admin/SectionHeader";
-import { StatCard } from "@/components/admin/StatCard";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   getAdminDisplayUser,
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
+import { getDashboardOverview } from "@/lib/repositories/dashboard.repository";
 
 export const dynamic = "force-dynamic";
 
-const activityRows = [
-  {
-    text: "Landing page code A8xK92LmQ received 284 visits today",
-    time: "2 min ago",
-  },
-  {
-    text: "Client Nova Media updated tracking profile",
-    time: "18 min ago",
-  },
-  {
-    text: "CAPI event delivery recovered for Pixel 2849•••129",
-    time: "42 min ago",
-  },
-  {
-    text: "New landing page P7mQ2xLpB published",
-    time: "1 hr ago",
-  },
-];
-
-const quickActions = [
-  { label: "Create Client", href: "/admin/clients" },
-  { label: "Create Landing Page", href: "/admin/landing-pages" },
-  { label: "View Analytics", href: "/admin/analytics" },
-  { label: "Open Settings", href: "/admin/settings" },
-];
-
-const healthItems = [
-  { label: "Admin UI", status: "Ready", tone: "success" },
-  { label: "Supabase", status: "Not connected in Phase 1", tone: "muted" },
-  { label: "Meta CAPI", status: "Not configured in Phase 1", tone: "muted" },
-  { label: "Public Pages", status: "Pending", tone: "warning" },
-];
-
-function StatusBadge({ status, tone }: { status: string; tone: string }) {
-  const className =
-    tone === "success"
-      ? "border-[#BBF7D0] bg-[#ECFDF5] text-[#16A34A]"
-      : tone === "warning"
-        ? "border-[#FDE68A] bg-[#FFFBEB] text-[#D97706]"
-        : "border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B]";
-
-  return (
-    <Badge variant="outline" className={className}>
-      {status}
-    </Badge>
-  );
+function formatNumber(value: number) {
+  return value.toLocaleString("en-IN");
 }
 
 export default async function DashboardPage() {
   const adminUser = await requireAdminUser();
+  const overview = await getDashboardOverview();
 
   return (
     <AdminShell
       title="Dashboard"
-      description="Operational overview for clients, landing pages, tracking, and conversions."
+      description="Overview of your landing pages, traffic, and conversions."
       user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-4 gap-4">
-          <StatCard
+          <DashboardStatCard
             title="Total Clients"
-            value="12"
-            helper="3 clients added this month"
+            value={formatNumber(overview.totalClients)}
+            helper="Client records managed in Digifixx"
             icon={Users}
             tone="info"
           />
-          <StatCard
+          <DashboardStatCard
             title="Active Landing Pages"
-            value="48"
-            helper="42 active, 6 paused"
+            value={formatNumber(overview.activeLandingPages)}
+            helper="Public pages currently available"
             icon={PanelsTopLeft}
             tone="success"
           />
-          <StatCard
+          <DashboardStatCard
             title="Total Visits"
-            value="128,430"
-            helper="Across all public pages"
+            value={formatNumber(overview.totalVisits)}
+            helper="PageView events across public pages"
             icon={Eye}
           />
-          <StatCard
+          <DashboardStatCard
             title="Total Conversions"
-            value="19,842"
-            helper="15.45% average conversion rate"
+            value={formatNumber(overview.totalConversions)}
+            helper={`${overview.conversionRate}% average conversion rate`}
             icon={MousePointerClick}
             tone="warning"
           />
         </div>
 
-        <div className="grid grid-cols-[2fr_1fr] gap-4">
-          <AdminCard>
-            <SectionHeader title="Recent Activity" />
-            <div className="mt-5 divide-y divide-[#E2E8F0]">
-              {activityRows.map((row) => (
-                <div
-                  key={row.text}
-                  className="flex items-center justify-between gap-6 py-3 first:pt-0 last:pb-0"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#F1F5F9] text-[#475569]">
-                      <Clock3 className="size-4" aria-hidden="true" />
-                    </span>
-                    <p className="truncate text-sm font-medium text-[#0F172A]">
-                      {row.text}
-                    </p>
-                  </div>
-                  <p className="shrink-0 text-xs text-[#94A3B8]">{row.time}</p>
-                </div>
-              ))}
+        <div className="grid grid-cols-[minmax(0,1.65fr)_minmax(360px,0.95fr)] gap-5">
+          <AdminCard className="rounded-[18px]">
+            <SectionHeader
+              title="Traffic Overview"
+              description="Visits and conversions from the last 7 days."
+            />
+            <div className="mt-5">
+              <TrafficOverviewChart data={overview.visitsLast7Days} />
+            </div>
+            <div className="mt-5 flex items-center gap-5 text-xs font-semibold text-[#64748B]">
+              <span className="inline-flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-[#2563EB]" />
+                Visits
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-[#16A34A]" />
+                Conversions
+              </span>
             </div>
           </AdminCard>
 
-          <div className="flex flex-col gap-4">
-            <AdminCard>
-              <SectionHeader title="Quick Actions" />
-              <div className="mt-5 grid gap-2">
-                {quickActions.map((action) => (
-                  <Button
-                    key={action.href}
-                    asChild
-                    variant="outline"
-                    className="h-9 justify-start rounded-[10px] border-[#E2E8F0] bg-white text-[#0F172A]"
-                  >
-                    <Link href={action.href}>{action.label}</Link>
-                  </Button>
-                ))}
+          <RecentActivityCard events={overview.recentEvents} />
+        </div>
+
+        <div className="grid grid-cols-[minmax(0,1.65fr)_minmax(360px,0.95fr)] gap-5">
+          <TopLandingPagesCard pages={overview.topLandingPages} />
+
+          <div className="flex flex-col gap-5">
+            <AdminCard className="rounded-[18px]">
+              <SectionHeader
+                title="Quick Actions"
+                description="Common admin tasks for day-to-day page management."
+              />
+              <div className="mt-5 grid gap-3">
+                <QuickActionTile
+                  title="Create Client"
+                  helper="Add a new client workspace."
+                  href="/admin/clients/new"
+                  icon={Users}
+                />
+                <QuickActionTile
+                  title="Create Landing Page"
+                  helper="Build a coded Telegram landing page."
+                  href="/admin/landing-pages/new"
+                  icon={Plus}
+                />
+                <QuickActionTile
+                  title="View Analytics"
+                  helper="Inspect page-specific performance."
+                  href="/admin/analytics"
+                  icon={BarChart3}
+                />
+                <QuickActionTile
+                  title="Manage Landing Pages"
+                  helper="Edit, pause, or archive public pages."
+                  href="/admin/landing-pages"
+                  icon={Settings2}
+                />
               </div>
             </AdminCard>
 
-            <AdminCard>
-              <SectionHeader title="System Health" />
-              <div className="mt-5 flex flex-col gap-3">
-                {healthItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2
-                        className="size-4 text-[#64748B]"
-                        aria-hidden="true"
-                      />
-                      <span className="text-sm font-medium text-[#0F172A]">
-                        {item.label}
-                      </span>
-                    </div>
-                    <StatusBadge status={item.status} tone={item.tone} />
-                  </div>
-                ))}
-              </div>
-            </AdminCard>
+            <TrackingHealthCard health={overview.trackingHealth} />
           </div>
         </div>
       </div>

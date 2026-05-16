@@ -20,7 +20,7 @@ export function AdminSidebar() {
             Digifixx
           </p>
           <p className="mt-1 text-xs leading-4 text-[#94A3B8]">
-            Agency Control Panel
+            Telegram Landing Pages
           </p>
         </div>
       </Link>
