@@ -295,6 +295,7 @@ export type RecentTrackingEvent = {
   device_type: string | null;
   utm_source: string | null;
   created_at: string;
+  capi_delivery_status: CapiDeliveryStatus;
 };
 
 export type AnalyticsOverview = {
@@ -339,6 +340,7 @@ export type DetailedRecentTrackingEvent = {
   utm_source: string | null;
   referrer: string | null;
   created_at: string;
+  capi_delivery_status: CapiDeliveryStatus;
 };
 
 export type LandingPageAnalyticsDetail = {

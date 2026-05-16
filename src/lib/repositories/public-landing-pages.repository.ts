@@ -63,11 +63,13 @@ export async function getActivePublicLandingPageByCode(publicCode: string) {
     return null;
   }
 
-  const row = data as unknown as PublicLandingPageRelationRow;
-  const profiles = row.meta_tracking_profiles || [];
+  const {
+    meta_tracking_profiles: profiles = [],
+    ...rest
+  } = data as unknown as PublicLandingPageRelationRow;
   
   // Sort descending by updated_at
-  const activeProfiles = profiles
+  const activeProfiles = (profiles || [])
     .filter((p) => p.is_active)
     .sort(
       (a, b) =>
@@ -83,8 +85,6 @@ export async function getActivePublicLandingPageByCode(publicCode: string) {
         default_click_event: activeProfile.default_click_event,
       }
     : null;
-
-  const { meta_tracking_profiles: _, ...rest } = row;
 
   return {
     ...rest,

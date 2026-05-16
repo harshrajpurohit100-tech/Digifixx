@@ -14,6 +14,7 @@ import {
   type UpdateMetaTrackingTokenInput,
 } from "@/lib/validations/digifixx";
 import type { MetaTrackingProfile } from "@/types/digifixx";
+import type { TrackingEventName } from "@/types/digifixx";
 
 type SafeMetaTrackingProfile = Omit<
   MetaTrackingProfile,
@@ -145,6 +146,58 @@ export async function getDecryptedCapiTokenForProfile(profileId: string) {
   }
 
   return decryptSecret(data.capi_access_token_encrypted);
+}
+
+export type ActiveDecryptedTrackingProfile = {
+  id: string;
+  pixel_id: string;
+  access_token: string | null;
+  test_event_code: string | null;
+  default_pageview_event: TrackingEventName;
+  default_click_event: TrackingEventName;
+};
+
+export async function getActiveDecryptedTrackingProfileForLandingPage(
+  landingPageId: string
+): Promise<ActiveDecryptedTrackingProfile | null> {
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("meta_tracking_profiles")
+    .select(
+      `
+      id,
+      pixel_id,
+      capi_access_token_encrypted,
+      test_event_code,
+      default_pageview_event,
+      default_click_event
+    `
+    )
+    .eq("landing_page_id", landingPageId)
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    pixel_id: data.pixel_id,
+    access_token: data.capi_access_token_encrypted
+      ? decryptSecret(data.capi_access_token_encrypted)
+      : null,
+    test_event_code: data.test_event_code,
+    default_pageview_event:
+      data.default_pageview_event as TrackingEventName,
+    default_click_event: data.default_click_event as TrackingEventName,
+  };
 }
 
 export async function upsertTrackingProfileForLandingPage(

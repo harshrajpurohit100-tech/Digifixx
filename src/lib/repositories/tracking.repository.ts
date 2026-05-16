@@ -11,6 +11,8 @@ import type {
   DetailedRecentTrackingEvent,
   LandingPageAnalyticsDetail,
   LandingPageStatus,
+  CapiDeliveryStatus,
+  PublicLandingPage,
 } from "@/types/digifixx";
 import { getActivePublicLandingPageByCode } from "./public-landing-pages.repository";
 
@@ -23,7 +25,32 @@ type TrackEventParams = {
   browser: string | null;
   os: string | null;
   deviceType: string | null;
+  landingPage?: Pick<PublicLandingPage, "id" | "client_id" | "public_code">;
+  metaPixelId?: string | null;
+  capiDeliveryStatus?: CapiDeliveryStatus;
+  capiResponse?: unknown;
+  capiError?: string | null;
+  capiSentAt?: string | null;
 };
+
+export async function getTrackingEventByLandingPageAndEventId(
+  landingPageId: string,
+  eventId: string
+) {
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("tracking_events")
+    .select("id, capi_delivery_status")
+    .eq("landing_page_id", landingPageId)
+    .eq("event_id", eventId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as { id: string; capi_delivery_status: CapiDeliveryStatus } | null;
+}
 
 export async function trackPublicEvent(params: TrackEventParams) {
   const {
@@ -35,11 +62,17 @@ export async function trackPublicEvent(params: TrackEventParams) {
     browser,
     os,
     deviceType,
+    landingPage: providedLandingPage,
+    metaPixelId,
+    capiDeliveryStatus = "not_sent",
+    capiResponse,
+    capiError,
+    capiSentAt,
   } = params;
 
-  const landingPage = await getActivePublicLandingPageByCode(
-    payload.publicCode
-  );
+  const landingPage =
+    providedLandingPage ??
+    (await getActivePublicLandingPageByCode(payload.publicCode));
   if (!landingPage) {
     throw new Error("Landing page not found or inactive.");
   }
@@ -112,6 +145,11 @@ export async function trackPublicEvent(params: TrackEventParams) {
     browser: browser,
     os: os,
     device_type: deviceType,
+    meta_pixel_id: metaPixelId,
+    capi_delivery_status: capiDeliveryStatus,
+    capi_response: capiResponse ?? null,
+    capi_error: capiError ?? null,
+    capi_sent_at: capiSentAt ?? null,
     metadata: payload.metadata || {},
   });
 
@@ -278,6 +316,7 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
       device_type,
       utm_source,
       created_at,
+      capi_delivery_status,
       landing_pages (
         public_code,
         internal_name,
@@ -297,6 +336,7 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
     device_type: ev.device_type as string | null,
     utm_source: ev.utm_source as string | null,
     created_at: ev.created_at as string,
+    capi_delivery_status: ev.capi_delivery_status as CapiDeliveryStatus,
   }));
 
   // Top landing pages - since we don't have a view, we'll fetch all active pages and compute their basic stats.
@@ -349,7 +389,7 @@ export async function getLandingPageAnalyticsDetail(
   // Fetch latest events for breakdowns (capped at 5000)
   const { data: events } = await supabase
     .from("tracking_events")
-    .select("event_name, utm_source, referrer, device_type, browser, created_at, id")
+    .select("event_name, utm_source, referrer, device_type, browser, created_at, id, capi_delivery_status")
     .eq("landing_page_id", landingPageId)
     .order("created_at", { ascending: false })
     .limit(5000);
@@ -404,6 +444,7 @@ export async function getLandingPageAnalyticsDetail(
           utm_source: ev.utm_source,
           referrer: ev.referrer,
           created_at: ev.created_at,
+          capi_delivery_status: ev.capi_delivery_status,
         });
       }
     }

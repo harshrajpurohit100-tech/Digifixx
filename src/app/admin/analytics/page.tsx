@@ -25,7 +25,11 @@ import {
   listLandingPagesForAnalyticsSelector 
 } from "@/lib/repositories/tracking.repository";
 import { getLandingPageById } from "@/lib/repositories/landing-pages.repository";
-import type { AnalyticsOverview, LandingPageAnalyticsDetail } from "@/types/digifixx";
+import type {
+  AnalyticsOverview,
+  CapiDeliveryStatus,
+  LandingPageAnalyticsDetail,
+} from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +49,24 @@ function DeviceIcon({ type }: { type: string | null }) {
   if (normalized === "tablet") return <Tablet className="size-4 text-[#64748B]" />;
   if (normalized === "desktop") return <Monitor className="size-4 text-[#64748B]" />;
   return <Globe className="size-4 text-[#64748B]" />;
+}
+
+function CapiStatusBadge({ status }: { status: CapiDeliveryStatus }) {
+  const styles: Record<CapiDeliveryStatus, string> = {
+    sent: "border-[#BBF7D0] bg-[#ECFDF5] text-[#166534]",
+    failed: "border-[#FECACA] bg-[#FEF2F2] text-[#B91C1C]",
+    skipped: "border-[#E2E8F0] bg-[#F8FAFC] text-[#475569]",
+    pending: "border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]",
+    not_sent: "border-[#E2E8F0] bg-white text-[#64748B]",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-semibold capitalize ${styles[status]}`}
+    >
+      {status.replace("_", " ")}
+    </span>
+  );
 }
 
 export default async function AnalyticsPage({
@@ -240,6 +262,7 @@ export default async function AnalyticsPage({
                             <TableRow className="border-[#E2E8F0] hover:bg-transparent">
                               <TableHead className="h-10 px-4 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">Time</TableHead>
                               <TableHead className="h-10 px-4 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">Event</TableHead>
+                              <TableHead className="h-10 px-4 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">CAPI</TableHead>
                               <TableHead className="h-10 px-4 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">Device / Browser</TableHead>
                               <TableHead className="h-10 px-4 text-xs font-semibold uppercase tracking-[0.04em] text-[#64748B]">Source</TableHead>
                             </TableRow>
@@ -252,6 +275,11 @@ export default async function AnalyticsPage({
                                 </TableCell>
                                 <TableCell className="px-4 py-3 text-sm font-semibold text-[#0F172A]">
                                   {ev.event_name}
+                                </TableCell>
+                                <TableCell className="px-4 py-3">
+                                  <CapiStatusBadge
+                                    status={ev.capi_delivery_status}
+                                  />
                                 </TableCell>
                                 <TableCell className="px-4 py-3">
                                   <div className="flex flex-col">

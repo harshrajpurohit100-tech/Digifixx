@@ -1,3 +1,5 @@
+import { createTrackingEventId } from "@/lib/browser-tracking-event";
+
 export function isValidMetaPixelId(pixelId: string): boolean {
   if (!pixelId) return false;
   const trimmed = pixelId.trim();
@@ -5,14 +7,7 @@ export function isValidMetaPixelId(pixelId: string): boolean {
 }
 
 export function createBrowserEventId(prefix = "evt"): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  
-  // Fallback if crypto.randomUUID is not available
-  const randomStr = Math.random().toString(36).substring(2, 15);
-  const timeStr = Date.now().toString(36);
-  return `${prefix}_${timeStr}_${randomStr}`;
+  return createTrackingEventId(prefix);
 }
 
 export type MetaBrowserEventName =

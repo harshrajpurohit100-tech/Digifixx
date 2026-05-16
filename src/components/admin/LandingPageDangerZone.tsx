@@ -12,7 +12,7 @@ type DangerZoneProps = {
 
 export function LandingPageDangerZone({ landingPageId }: DangerZoneProps) {
   const [archiveState, archiveAction, isArchiving] = useActionState(
-    async (_state: unknown) => {
+    async () => {
       return await archiveLandingPageAction(landingPageId);
     },
     null

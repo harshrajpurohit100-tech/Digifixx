@@ -324,7 +324,7 @@ export async function updateLandingPageAction(
   let selectedClient;
   try {
     selectedClient = await getClientById(parsedInput.data.client_id);
-  } catch (error) {
+  } catch {
     return {
       error: "There was a problem loading the selected client.",
       fieldErrors: { client_id: "Could not verify client." },
@@ -367,7 +367,7 @@ export async function updateLandingPageAction(
       // Note: Leaving old logo orphaned intentionally for safety, unless instructed otherwise.
       logoUpload = await uploadLandingLogo(logoFile, existingPage.public_code);
     }
-  } catch (error) {
+  } catch {
     return { error: "Logo upload failed. Please verify the landing-assets storage bucket." };
   }
 

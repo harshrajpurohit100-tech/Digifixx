@@ -2,7 +2,8 @@
 
 import { Send } from "lucide-react";
 import type { TrackingEventName } from "@/types/digifixx";
-import { createBrowserEventId, normalizeMetaEventName } from "@/lib/meta-pixel";
+import { createTrackingEventId } from "@/lib/browser-tracking-event";
+import { normalizeMetaEventName } from "@/lib/meta-pixel";
 
 type TelegramCtaButtonProps = {
   href: string;
@@ -23,35 +24,33 @@ export function TelegramCtaButton({
   tracking,
 }: TelegramCtaButtonProps) {
   const handleClick = () => {
+    const clickEventId = createTrackingEventId("clk");
+    const clickEventName = normalizeMetaEventName(
+      tracking?.default_click_event,
+      "Lead"
+    );
+
     // ── Meta Pixel ──────────────────────────────────────────────────────────
     if (tracking && tracking.pixel_id && typeof window !== "undefined" && window.fbq) {
-      const metaEventId = createBrowserEventId("clk");
-      const eventName = normalizeMetaEventName(tracking.default_click_event, "Lead");
-
       window.fbq(
         "track",
-        eventName,
+        clickEventName,
         {
           content_name: publicCode,
           content_category: "telegram_landing_page",
           destination: "telegram",
         },
-        { eventID: metaEventId }
+        { eventID: clickEventId }
       );
-      // Note: Phase 9 CAPI will use matching event_id for deduplication.
     }
 
     // ── Internal Digifixx Tracking ───────────────────────────────────────────
     try {
-      const clickEventName = normalizeMetaEventName(
-        tracking?.default_click_event,
-        "Lead"
-      );
       const searchParams = new URLSearchParams(window.location.search);
       const internalPayload = {
         publicCode,
         eventName: clickEventName,
-        eventId: createBrowserEventId("ctaclk"),
+        eventId: clickEventId,
         sourceUrl: window.location.href,
         referrer: document.referrer || null,
         utm: {

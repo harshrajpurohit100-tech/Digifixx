@@ -1,9 +1,8 @@
 import { CheckCircle2 } from "lucide-react";
 
 import { CountdownText } from "@/components/public/CountdownText";
+import { PublicPageTrackingBridge } from "@/components/public/PublicPageTrackingBridge";
 import { TelegramCtaButton } from "@/components/public/TelegramCtaButton";
-import { MetaPixel } from "@/components/public/meta/MetaPixel";
-import { PublicAnalyticsTracker } from "@/components/public/PublicAnalyticsTracker";
 import { TelegramLogo } from "@/components/public/TelegramLogo";
 import {
   DEFAULT_CTA_BUTTON_TEXT,
@@ -55,16 +54,10 @@ export function PublicTelegramPage({ page }: PublicTelegramPageProps) {
 
   return (
     <main className="min-h-screen bg-[#F4F7FB] text-[#0F172A]">
-      {page.tracking?.pixel_id ? (
-        <MetaPixel
-          pixelId={page.tracking.pixel_id}
-          pageViewEventName={page.tracking.default_pageview_event}
-          landingPageCode={page.public_code}
-        />
-      ) : null}
-
-      {/* Internal Digifixx first-party analytics — runs in parallel with MetaPixel */}
-      <PublicAnalyticsTracker publicCode={page.public_code} />
+      <PublicPageTrackingBridge
+        publicCode={page.public_code}
+        tracking={page.tracking}
+      />
 
       <a
         href={telegramDownloadUrl}
