@@ -41,11 +41,18 @@ const tableHeadings = [
 ];
 
 function formatDate(value: string) {
-  return format(new Date(value), "MMM d, yyyy");
+  // Parse only YYYY-MM-DD to avoid UTC → local timezone date shift (e.g. IST hydration mismatch)
+  const [year, month, day] = value.split("T")[0].split("-").map(Number);
+  return format(new Date(year, month - 1, day), "MMM d, yyyy");
 }
 
 function formatTime(value: string) {
-  return format(new Date(value), "h:mm a");
+  // Parse time in local terms using the raw hour/minute from the ISO string
+  // to keep server and client consistent regardless of timezone
+  const timePart = value.split("T")[1]?.slice(0, 5) ?? "00:00";
+  const [h, m] = timePart.split(":").map(Number);
+  const d = new Date(2000, 0, 1, h, m);
+  return format(d, "h:mm a");
 }
 
 function formatNumber(value: number) {
