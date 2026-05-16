@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -23,7 +23,7 @@ export function TrafficOverviewChart({ data }: TrafficOverviewChartProps) {
 
   if (!hasData) {
     return (
-      <div className="flex h-[292px] items-center justify-center rounded-2xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] text-center">
+      <div className="flex h-[306px] items-center justify-center rounded-[20px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] text-center">
         <div>
           <p className="text-sm font-bold text-[#0F172A]">
             No traffic data yet
@@ -37,10 +37,34 @@ export function TrafficOverviewChart({ data }: TrafficOverviewChartProps) {
   }
 
   return (
-    <div className="h-[292px]">
+    <div className="h-[306px]">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
-          <CartesianGrid stroke="#E2E8F0" strokeDasharray="4 4" />
+        <AreaChart
+          data={data}
+          margin={{ top: 12, right: 14, left: -18, bottom: 0 }}
+        >
+          <defs>
+            <linearGradient id="visitsGradient" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="5%" stopColor="#2563EB" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#2563EB" stopOpacity={0.02} />
+            </linearGradient>
+            <linearGradient
+              id="conversionsGradient"
+              x1="0"
+              x2="0"
+              y1="0"
+              y2="1"
+            >
+              <stop offset="5%" stopColor="#16A34A" stopOpacity={0.14} />
+              <stop offset="95%" stopColor="#16A34A" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid
+            stroke="#E2E8F0"
+            strokeDasharray="4 4"
+            strokeOpacity={0.7}
+            vertical={false}
+          />
           <XAxis
             dataKey="date"
             axisLine={false}
@@ -56,28 +80,30 @@ export function TrafficOverviewChart({ data }: TrafficOverviewChartProps) {
           <Tooltip
             contentStyle={{
               border: "1px solid #E2E8F0",
-              borderRadius: 12,
-              boxShadow: "0 12px 30px rgba(15,23,42,0.08)",
+              borderRadius: 14,
+              boxShadow: "0 16px 36px rgba(15,23,42,0.10)",
             }}
             labelStyle={{ color: "#0F172A", fontWeight: 700 }}
           />
-          <Line
+          <Area
             type="monotone"
             dataKey="visits"
             stroke="#2563EB"
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{ r: 5 }}
+            strokeWidth={2.8}
+            fill="url(#visitsGradient)"
+            dot={{ r: 0 }}
+            activeDot={{ r: 5, strokeWidth: 0 }}
           />
-          <Line
+          <Area
             type="monotone"
             dataKey="conversions"
             stroke="#16A34A"
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{ r: 5 }}
+            strokeWidth={2.8}
+            fill="url(#conversionsGradient)"
+            dot={{ r: 0 }}
+            activeDot={{ r: 5, strokeWidth: 0 }}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
