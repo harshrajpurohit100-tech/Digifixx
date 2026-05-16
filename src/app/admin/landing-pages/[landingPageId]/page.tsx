@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import { getAdminDisplayUser, requireAdminUser } from "@/lib/auth/get-admin-user";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { getLandingPageDetail } from "@/lib/repositories/landing-pages.repository";
+import { getLandingPageAnalyticsSummary } from "@/lib/repositories/tracking.repository";
 import { updateLandingPageStatusAction } from "@/app/admin/landing-pages/actions";
-import type { LandingPageWithClientAndTracking } from "@/types/digifixx";
+import type { LandingPageAnalyticsSummary, LandingPageWithClientAndTracking } from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
 
@@ -198,12 +199,38 @@ function PreviewPlaceholder({
   );
 }
 
+function AnalyticsStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#94A3B8]">{label}</p>
+      <p className="mt-2 text-[22px] font-bold leading-none tracking-tight text-[#0F172A]">{value}</p>
+    </div>
+  );
+}
+
+function AnalyticsSummaryRow({ analytics }: { analytics: LandingPageAnalyticsSummary | null }) {
+  if (!analytics) return null;
+  return (
+    <div className="grid grid-cols-6 gap-3">
+      <AnalyticsStat label="Total Visits" value={analytics.totalVisits} />
+      <AnalyticsStat label="Unique Visitors" value={analytics.uniqueVisitors} />
+      <AnalyticsStat label="Conversions" value={analytics.totalConversions} />
+      <AnalyticsStat label="Conv. Rate" value={`${analytics.conversionRate}%`} />
+      <AnalyticsStat label="Today Visits" value={analytics.todayVisits} />
+      <AnalyticsStat label="Today Conv." value={analytics.todayConversions} />
+    </div>
+  );
+}
+
 export default async function LandingPageDetailPage({
   params,
 }: LandingPageDetailPageProps) {
   const adminUser = await requireAdminUser();
   const { landingPageId } = await params;
-  const page = await getLandingPageDetail(landingPageId);
+  const [page, analytics] = await Promise.all([
+    getLandingPageDetail(landingPageId),
+    getLandingPageAnalyticsSummary(landingPageId).catch(() => null),
+  ]);
 
   if (!page) {
     notFound();
@@ -292,6 +319,8 @@ export default async function LandingPageDetailPage({
             </div>
           }
         />
+
+        <AnalyticsSummaryRow analytics={analytics} />
 
         <div className="grid grid-cols-[2fr_1fr_1fr] gap-4">
           <PublicUrlCard page={page} />

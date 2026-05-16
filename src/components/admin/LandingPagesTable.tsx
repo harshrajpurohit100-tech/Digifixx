@@ -13,10 +13,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
-import type { LandingPageWithClientAndTracking } from "@/types/digifixx";
+import type { LandingPageAnalyticsSummary, LandingPageWithClientAndTracking } from "@/types/digifixx";
 
 type LandingPagesTableProps = {
   landingPages: LandingPageWithClientAndTracking[];
+  analyticsMap?: Record<string, LandingPageAnalyticsSummary>;
 };
 
 function formatDate(value: string) {
@@ -41,7 +42,7 @@ function LogoThumb({ page }: { page: LandingPageWithClientAndTracking }) {
   );
 }
 
-export function LandingPagesTable({ landingPages }: LandingPagesTableProps) {
+export function LandingPagesTable({ landingPages, analyticsMap = {} }: LandingPagesTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -52,7 +53,8 @@ export function LandingPagesTable({ landingPages }: LandingPagesTableProps) {
             "Client",
             "Status",
             "Pixel",
-            "CAPI",
+            "Visits",
+            "Conversions",
             "Public URL",
             "Last Updated",
             "Actions",
@@ -97,13 +99,11 @@ export function LandingPagesTable({ landingPages }: LandingPagesTableProps) {
               <TableCell className="px-5 py-4">
                 <StatusBadge status={page.status} />
               </TableCell>
-              <TableCell className="px-5 py-4 text-sm text-[#475569]">
-                {page.tracking_profile?.pixel_id ?? "Not configured"}
+              <TableCell className="px-5 py-4 text-sm font-medium text-[#0F172A]">
+                {analyticsMap[page.id]?.totalVisits ?? 0}
               </TableCell>
-              <TableCell className="px-5 py-4 text-sm text-[#475569]">
-                {page.tracking_profile?.capi_token_last4
-                  ? `••••${page.tracking_profile.capi_token_last4}`
-                  : "Missing"}
+              <TableCell className="px-5 py-4 text-sm font-medium text-[#0F172A]">
+                {analyticsMap[page.id]?.totalConversions ?? 0}
               </TableCell>
               <TableCell className="px-5 py-4">
                 <div className="flex items-center gap-2">

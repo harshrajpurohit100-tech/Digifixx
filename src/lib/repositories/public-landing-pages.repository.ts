@@ -5,6 +5,7 @@ import type { PublicLandingPage } from "@/types/digifixx";
 
 const publicLandingPageColumns = `
   id,
+  client_id,
   public_code,
   page_title,
   channel_name,
@@ -33,6 +34,7 @@ const publicLandingPageColumns = `
 `;
 
 type PublicLandingPageRelationRow = Omit<PublicLandingPage, "tracking"> & {
+  client_id: string;
   meta_tracking_profiles:
     | {
         pixel_id: string;

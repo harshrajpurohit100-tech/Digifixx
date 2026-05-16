@@ -23,8 +23,9 @@ export function TelegramCtaButton({
   tracking,
 }: TelegramCtaButtonProps) {
   const handleClick = () => {
+    // ── Meta Pixel ──────────────────────────────────────────────────────────
     if (tracking && tracking.pixel_id && typeof window !== "undefined" && window.fbq) {
-      const eventId = createBrowserEventId("clk");
+      const metaEventId = createBrowserEventId("clk");
       const eventName = normalizeMetaEventName(tracking.default_click_event, "Lead");
 
       window.fbq(
@@ -35,11 +36,49 @@ export function TelegramCtaButton({
           content_category: "telegram_landing_page",
           destination: "telegram",
         },
-        { eventID: eventId }
+        { eventID: metaEventId }
       );
-      
       // Note: Phase 9 CAPI will use matching event_id for deduplication.
-      // We do not store this event_id in the database yet.
+    }
+
+    // ── Internal Digifixx Tracking ───────────────────────────────────────────
+    try {
+      const clickEventName = normalizeMetaEventName(
+        tracking?.default_click_event,
+        "Lead"
+      );
+      const searchParams = new URLSearchParams(window.location.search);
+      const internalPayload = {
+        publicCode,
+        eventName: clickEventName,
+        eventId: createBrowserEventId("ctaclk"),
+        sourceUrl: window.location.href,
+        referrer: document.referrer || null,
+        utm: {
+          source: searchParams.get("utm_source"),
+          medium: searchParams.get("utm_medium"),
+          campaign: searchParams.get("utm_campaign"),
+          content: searchParams.get("utm_content"),
+          term: searchParams.get("utm_term"),
+          adset: searchParams.get("utm_adset"),
+          ad: searchParams.get("utm_ad"),
+        },
+        metadata: {
+          destination: "telegram",
+        },
+      };
+
+      fetch("/api/public/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(internalPayload),
+        credentials: "same-origin",
+        keepalive: true,
+      }).catch(() => {
+        // Silently fail — do not block CTA navigation
+      });
+    } catch {
+      // Silently fail
     }
   };
 

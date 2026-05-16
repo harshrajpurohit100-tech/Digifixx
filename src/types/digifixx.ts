@@ -124,6 +124,7 @@ export type LandingPageWithClientAndTracking = LandingPage & {
 export type PublicLandingPage = Pick<
   LandingPage,
   | "id"
+  | "client_id"
   | "public_code"
   | "page_title"
   | "channel_name"
@@ -264,4 +265,43 @@ export type AuditLog = {
   ip_hash: string | null;
   user_agent: string | null;
   created_at: string;
+};
+
+export type LandingPageAnalyticsSummary = {
+  totalVisits: number;
+  totalConversions: number;
+  uniqueVisitors: number;
+  conversionRate: number;
+  todayVisits: number;
+  todayConversions: number;
+};
+
+export type TopLandingPageAnalytics = {
+  id: string;
+  public_code: string;
+  internal_name: string;
+  channel_name: string | null;
+  visits: number;
+  conversions: number;
+  conversionRate: number;
+};
+
+export type RecentTrackingEvent = {
+  id: string;
+  event_name: string;
+  public_code: string;
+  internal_name: string;
+  channel_name: string | null;
+  device_type: string | null;
+  utm_source: string | null;
+  created_at: string;
+};
+
+export type AnalyticsOverview = {
+  totalVisits: number;
+  totalConversions: number;
+  uniqueVisitors: number;
+  conversionRate: number;
+  topLandingPages: TopLandingPageAnalytics[];
+  recentEvents: RecentTrackingEvent[];
 };

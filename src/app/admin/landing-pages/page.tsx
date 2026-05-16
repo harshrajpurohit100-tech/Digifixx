@@ -12,7 +12,9 @@ import {
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
 import { listLandingPagesWithClientAndTracking } from "@/lib/repositories/landing-pages.repository";
+import { getLandingPagesAnalyticsMap } from "@/lib/repositories/tracking.repository";
 import type {
+  LandingPageAnalyticsSummary,
   LandingPageStatus,
   LandingPageWithClientAndTracking,
 } from "@/types/digifixx";
@@ -61,10 +63,16 @@ function LandingPageLoadError() {
 export default async function LandingPagesPage() {
   const adminUser = await requireAdminUser();
   let landingPages: LandingPageWithClientAndTracking[] = [];
+  let analyticsMap: Record<string, LandingPageAnalyticsSummary> = {};
   let hasLoadError = false;
 
   try {
     landingPages = await listLandingPagesWithClientAndTracking();
+    if (landingPages.length > 0) {
+      analyticsMap = await getLandingPagesAnalyticsMap(
+        landingPages.map((p) => p.id)
+      );
+    }
   } catch (error) {
     console.error("Unable to load landing pages", error);
     hasLoadError = true;
@@ -123,7 +131,7 @@ export default async function LandingPagesPage() {
               </p>
             </div>
             {landingPages.length > 0 ? (
-              <LandingPagesTable landingPages={landingPages} />
+              <LandingPagesTable landingPages={landingPages} analyticsMap={analyticsMap} />
             ) : (
               <div className="p-5">
                 <EmptyState
