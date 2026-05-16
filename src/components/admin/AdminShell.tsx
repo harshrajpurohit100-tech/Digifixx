@@ -23,9 +23,9 @@ export function AdminShell({
 }: AdminShellProps) {
   return (
     <DesktopOnlyGuard>
-      <div className="flex min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-[#F8FAFC]">
         <AdminSidebar />
-        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="relative ml-[272px] flex min-h-screen min-w-0 flex-col overflow-hidden">
           <div className="pointer-events-none absolute right-0 top-0 size-[420px] rounded-full bg-[#2563EB]/[0.06] blur-3xl" />
           <div className="pointer-events-none absolute right-40 top-10 size-[360px] rounded-full bg-[#7C3AED]/[0.05] blur-3xl" />
           <AdminTopbar title={title} description={description} user={user} />

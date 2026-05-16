@@ -10,11 +10,11 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="relative flex h-screen w-[272px] shrink-0 overflow-hidden bg-[#020617] px-4 py-5">
+    <aside className="fixed left-0 top-0 z-30 flex h-screen w-[272px] shrink-0 overflow-y-auto overflow-x-hidden bg-[#020617] px-4 py-5">
       <div className="pointer-events-none absolute -left-20 top-0 size-56 rounded-full bg-[#2563EB]/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 right-0 size-64 rounded-full bg-[#7C3AED]/15 blur-3xl" />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-h-full flex-1 flex-col">
         <Link href="/admin/dashboard" className="flex items-center gap-3 px-1">
           <div className="flex size-10 items-center justify-center rounded-[12px] bg-gradient-to-br from-[#2563EB] to-[#7C3AED] text-sm font-extrabold text-white shadow-[0_0_28px_rgba(37,99,235,0.35)]">
             D
