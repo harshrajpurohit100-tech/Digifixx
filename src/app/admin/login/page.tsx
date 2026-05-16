@@ -15,9 +15,13 @@ type AdminLoginPageProps = {
 export default async function AdminLoginPage({
   searchParams,
 }: AdminLoginPageProps) {
-  const { user } = await getAdminUser();
-  if (user) {
+  const { user, profile } = await getAdminUser();
+  if (user && profile?.status === "active") {
     redirect("/admin/dashboard");
+  }
+
+  if (user) {
+    redirect("/admin/access-denied");
   }
 
   const resolvedSearchParams = await searchParams;

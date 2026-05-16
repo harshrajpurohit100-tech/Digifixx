@@ -171,10 +171,35 @@ export default async function LandingPageEditPage({ params }: LandingPageEditPag
   const adminUser = await requireAdminUser();
   const { landingPageId } = await params;
 
-  const [page, clients] = await Promise.all([
-    getLandingPageDetail(landingPageId),
-    listClients(),
-  ]);
+  let page: Awaited<ReturnType<typeof getLandingPageDetail>> = null;
+  let clients: Awaited<ReturnType<typeof listClients>> = [];
+
+  try {
+    [page, clients] = await Promise.all([
+      getLandingPageDetail(landingPageId),
+      listClients(),
+    ]);
+  } catch (error) {
+    console.error("Unable to load landing page edit form", error);
+
+    return (
+      <AdminShell
+        title="Edit Landing Page"
+        description="Update Telegram page content, public status, and Meta tracking configuration."
+        user={getAdminDisplayUser(adminUser)}
+      >
+        <div className="rounded-[22px] border border-[#E2E8F0] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <h2 className="text-lg font-extrabold text-[#0F172A]">
+            Unable to load edit form
+          </h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[#64748B]">
+            There was a problem loading this landing page or its client list.
+            Check Supabase configuration and database policies.
+          </p>
+        </div>
+      </AdminShell>
+    );
+  }
 
   if (!page) {
     notFound();

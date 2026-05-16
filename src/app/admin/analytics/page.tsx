@@ -179,11 +179,19 @@ export default async function AnalyticsPage({
   const adminUser = await requireAdminUser();
   const { pageId } = await searchParams;
 
-  const selectorPages = await listLandingPagesForAnalyticsSelector();
+  let selectorPages: Awaited<
+    ReturnType<typeof listLandingPagesForAnalyticsSelector>
+  > = [];
 
   let selectedPage = null;
   let detail: LandingPageAnalyticsDetail | null = null;
   let overview: AnalyticsOverview | null = null;
+
+  try {
+    selectorPages = await listLandingPagesForAnalyticsSelector();
+  } catch (err) {
+    console.error("Failed to load analytics page selector", err);
+  }
 
   if (pageId) {
     try {

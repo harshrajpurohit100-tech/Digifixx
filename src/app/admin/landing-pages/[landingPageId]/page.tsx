@@ -530,10 +530,37 @@ export default async function LandingPageDetailPage({
 }: LandingPageDetailPageProps) {
   const adminUser = await requireAdminUser();
   const { landingPageId } = await params;
-  const [page, analytics] = await Promise.all([
-    getLandingPageDetail(landingPageId),
-    getLandingPageAnalyticsSummary(landingPageId).catch(() => null),
-  ]);
+  let page: LandingPageWithClientAndTracking | null = null;
+  let analytics: LandingPageAnalyticsSummary | null = null;
+
+  try {
+    [page, analytics] = await Promise.all([
+      getLandingPageDetail(landingPageId),
+      getLandingPageAnalyticsSummary(landingPageId).catch(() => null),
+    ]);
+  } catch (error) {
+    console.error("Unable to load landing page detail", error);
+
+    return (
+      <AdminShell
+        title="Landing Page"
+        description="Landing page configuration, public code, and tracking profile overview."
+        user={getAdminDisplayUser(adminUser)}
+      >
+        <AdminCard className="rounded-[22px] shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="max-w-xl">
+            <h2 className="text-lg font-extrabold text-[#0F172A]">
+              Unable to load landing page
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#64748B]">
+              There was a problem loading this landing page. Check Supabase
+              configuration, service role access, and database policies.
+            </p>
+          </div>
+        </AdminCard>
+      </AdminShell>
+    );
+  }
 
   if (!page) {
     notFound();

@@ -68,10 +68,10 @@ export async function loginAction(
       .eq("user_id", user.id)
       .maybeSingle<{ status: string }>();
 
-    if (profile?.status === "suspended") {
+    if (profile?.status !== "active") {
       await supabase.auth.signOut();
       return {
-        error: "This admin account is suspended.",
+        error: "This account is not authorized for admin access.",
       };
     }
   }

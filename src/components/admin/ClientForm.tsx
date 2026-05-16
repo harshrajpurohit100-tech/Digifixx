@@ -61,7 +61,7 @@ export function ClientForm() {
           id="name"
           name="name"
           required
-          placeholder="Nova Media"
+          placeholder="Client name"
           className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
         />
         <p className="text-xs leading-5 text-[#64748B]">
@@ -94,7 +94,7 @@ export function ClientForm() {
           <Input
             id="contact_name"
             name="contact_name"
-            placeholder="Priya Sharma"
+            placeholder="Contact name"
             className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
           />
           <FieldError message={state.fieldErrors?.contact_name} />
@@ -110,7 +110,7 @@ export function ClientForm() {
             id="contact_email"
             name="contact_email"
             type="email"
-            placeholder="priya@example.com"
+            placeholder="contact@example.com"
             className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
           />
           <FieldError message={state.fieldErrors?.contact_email} />
@@ -123,7 +123,7 @@ export function ClientForm() {
           <Input
             id="contact_phone"
             name="contact_phone"
-            placeholder="+91 98765 43210"
+            placeholder="+91 phone number"
             className="h-[42px] rounded-[10px] border-[#E2E8F0] bg-white text-sm"
           />
           <FieldError message={state.fieldErrors?.contact_phone} />

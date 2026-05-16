@@ -17,6 +17,8 @@ export type PlainClient = {
   contact_email: string | null;
   status: "active" | "paused" | "archived";
   updated_at: string;
+  active_pages: number;
+  tracking_profiles: number;
 };
 
 type ClientsDirectoryProps = {
@@ -170,14 +172,16 @@ export function ClientsDirectory({ clients }: ClientsDirectoryProps) {
                       <StatusBadge status={client.status} />
                     </td>
 
-                    {/* Active Pages — placeholder */}
                     <td className="px-5 py-4">
-                      <span className="text-[13px] font-medium text-[#475569]">0</span>
+                      <span className="text-[13px] font-medium text-[#475569]">
+                        {client.active_pages.toLocaleString("en-IN")}
+                      </span>
                     </td>
 
-                    {/* Tracking Profiles — placeholder */}
                     <td className="px-5 py-4">
-                      <span className="text-[13px] font-medium text-[#475569]">0</span>
+                      <span className="text-[13px] font-medium text-[#475569]">
+                        {client.tracking_profiles.toLocaleString("en-IN")}
+                      </span>
                     </td>
 
                     {/* Last Updated */}

@@ -84,6 +84,7 @@ export async function trackPublicEvent(params: TrackEventParams) {
   const { data: existingSession } = await supabase
     .from("visitor_sessions")
     .select("id")
+    .eq("landing_page_id", landingPage.id)
     .eq("session_id", sessionId)
     .maybeSingle();
 
@@ -478,11 +479,15 @@ export async function listLandingPagesForAnalyticsSelector(): Promise<
   AnalyticsLandingPageSelectorItem[]
 > {
   const supabase = getSupabaseAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("landing_pages")
     .select("id, public_code, channel_name, internal_name, status, updated_at")
     .order("status", { ascending: true })
     .order("updated_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
 
   const statusOrder = { active: 0, paused: 1, draft: 2, archived: 3 };
 

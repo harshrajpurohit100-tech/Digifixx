@@ -13,25 +13,26 @@ const settingsCards = [
   {
     title: "App Settings",
     description:
-      "Manage Digifixx workspace identity and environment configuration.",
-    status: "Phase 1 placeholder",
+      "Manage Digifixx runtime identity, deployment URL, and environment configuration.",
+    status: "Configured",
   },
   {
     title: "Security Settings",
     description:
-      "Authentication, admin access, roles, and session controls will be added in Phase 2.",
-    status: "Pending",
+      "Supabase authentication, protected admin routes, and admin profiles are active.",
+    status: "Active",
   },
   {
     title: "Tracking Settings",
     description:
-      "Meta Pixel, Conversions API, and event defaults will be configured in later phases.",
-    status: "Pending",
+      "Meta Pixel, Conversions API, and internal analytics are managed per landing page.",
+    status: "Active",
   },
   {
     title: "Team Access",
-    description: "Admin roles and invited users will be managed here.",
-    status: "Pending",
+    description:
+      "Admin access is controlled through Supabase Auth and the admin profile table.",
+    status: "Managed",
   },
 ];
 

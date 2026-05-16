@@ -200,7 +200,7 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
               id="internal_name"
               name="internal_name"
               required
-              placeholder="Nova Media - Telegram Join Page"
+              placeholder="Client - Telegram Join Page"
               className={inputClassName}
             />
             <HelperText>
@@ -219,7 +219,7 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
               id="channel_name"
               name="channel_name"
               required
-              placeholder="OPTIONS MASTER™"
+              placeholder="Telegram Channel Name"
               className={inputClassName}
             />
             <HelperText>This is shown as the main title on the public page.</HelperText>
@@ -390,7 +390,7 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
               id="pixel_id"
               name="pixel_id"
               required
-              placeholder="123456789012345"
+              placeholder="Meta Pixel ID"
               className={inputClassName}
             />
             <HelperText>This Pixel ID will load only on this landing page.</HelperText>
@@ -402,7 +402,7 @@ export function LandingPageForm({ clients }: LandingPageFormProps) {
             <Input
               id="test_event_code"
               name="test_event_code"
-              placeholder="TEST12345"
+              placeholder="Meta test event code"
               className={inputClassName}
             />
             <FieldError message={state.fieldErrors?.test_event_code} />

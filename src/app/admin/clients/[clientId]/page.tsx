@@ -19,7 +19,10 @@ import {
   getAdminDisplayUser,
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
-import { getClientById } from "@/lib/repositories/clients.repository";
+import {
+  getClientById,
+  getClientWorkspaceSummary,
+} from "@/lib/repositories/clients.repository";
 import type { Client } from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
@@ -51,24 +54,40 @@ function DetailItem({
   );
 }
 
-function PlaceholderCard({
+function WorkspaceMetricCard({
   icon: Icon,
   title,
-  text,
+  value,
+  helper,
+  href,
 }: {
   icon: LucideIcon;
   title: string;
-  text: string;
+  value: number;
+  helper: string;
+  href: string;
 }) {
   return (
     <AdminCard className="min-h-40">
-      <div className="flex size-10 items-center justify-center rounded-xl bg-[#F1F5F9] text-[#475569]">
-        <Icon className="size-[18px]" aria-hidden="true" />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-[#F5F3FF] text-[#7C3AED]">
+          <Icon className="size-[18px]" aria-hidden="true" />
+        </div>
+        <Button
+          asChild
+          variant="outline"
+          className="h-8 rounded-[10px] border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#475569]"
+        >
+          <Link href={href}>Open</Link>
+        </Button>
       </div>
       <h2 className="mt-4 text-lg font-bold leading-tight text-[#0F172A]">
         {title}
       </h2>
-      <p className="mt-2 text-sm leading-6 text-[#64748B]">{text}</p>
+      <p className="mt-3 text-3xl font-extrabold tracking-[-0.03em] text-[#0F172A]">
+        {value.toLocaleString("en-IN")}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[#64748B]">{helper}</p>
     </AdminCard>
   );
 }
@@ -109,22 +128,58 @@ export default async function ClientDetailPage({
 }: ClientDetailPageProps) {
   const adminUser = await requireAdminUser();
   const { clientId } = await params;
-  const client = await getClientById(clientId);
+  let client: Client | null = null;
+
+  try {
+    client = await getClientById(clientId);
+  } catch (error) {
+    console.error("Unable to load client detail", error);
+
+    return (
+      <AdminShell
+        title="Client"
+        description="Client workspace overview, landing pages, and tracking activity."
+        user={getAdminDisplayUser(adminUser)}
+      >
+        <AdminCard>
+          <div className="max-w-xl">
+            <h2 className="text-lg font-extrabold text-[#0F172A]">
+              Unable to load client
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#64748B]">
+              There was a problem loading this client. Check Supabase
+              configuration and database policies.
+            </p>
+          </div>
+        </AdminCard>
+      </AdminShell>
+    );
+  }
 
   if (!client) {
     notFound();
   }
 
+  const summary = await getClientWorkspaceSummary(client.id).catch((error) => {
+    console.error("Unable to load client workspace summary", error);
+    return {
+      totalPages: 0,
+      activePages: 0,
+      trackingProfiles: 0,
+      totalEvents: 0,
+    };
+  });
+
   return (
     <AdminShell
       title={client.name}
-      description="Client workspace overview and future landing page infrastructure."
+      description="Client workspace overview, landing pages, and tracking activity."
       user={getAdminDisplayUser(adminUser)}
     >
       <div className="flex flex-col gap-6">
         <SectionHeader
           title={client.name}
-          description="Client workspace overview and future landing page infrastructure."
+          description="Client workspace overview, landing pages, and tracking activity."
           action={
             <Button
               asChild
@@ -142,20 +197,26 @@ export default async function ClientDetailPage({
         <ClientDetailsCard client={client} />
 
         <div className="grid grid-cols-3 gap-4">
-          <PlaceholderCard
+          <WorkspaceMetricCard
             icon={FileText}
             title="Landing Pages"
-            text="Landing page management will be connected in the next phase."
+            value={summary.totalPages}
+            helper={`${summary.activePages.toLocaleString("en-IN")} active public pages for this client.`}
+            href="/admin/landing-pages"
           />
-          <PlaceholderCard
+          <WorkspaceMetricCard
             icon={RadioTower}
             title="Tracking Profiles"
-            text="Meta Pixel and CAPI profiles will be configured in a later phase."
+            value={summary.trackingProfiles}
+            helper="Active Meta Pixel and CAPI profiles linked to this client."
+            href="/admin/landing-pages"
           />
-          <PlaceholderCard
+          <WorkspaceMetricCard
             icon={BarChart3}
             title="Analytics"
-            text="Client-level analytics will appear after tracking is implemented."
+            value={summary.totalEvents}
+            helper="Recorded visits and conversion events attributed to this client."
+            href="/admin/analytics"
           />
         </div>
       </div>

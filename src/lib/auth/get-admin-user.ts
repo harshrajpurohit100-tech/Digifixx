@@ -70,6 +70,10 @@ export async function requireAdminUser(): Promise<RequiredAdminUserResult> {
     redirect("/admin/login");
   }
 
+  if (adminUser.profile?.status !== "active") {
+    redirect("/admin/access-denied");
+  }
+
   return {
     user: adminUser.user,
     profile: adminUser.profile,

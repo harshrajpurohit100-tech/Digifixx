@@ -16,7 +16,10 @@ import {
   getAdminDisplayUser,
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
-import { listClients } from "@/lib/repositories/clients.repository";
+import {
+  getClientDirectoryStats,
+  listClients,
+} from "@/lib/repositories/clients.repository";
 import type { Client, ClientStatus } from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
@@ -82,10 +85,12 @@ function ErrorCard() {
 export default async function ClientsPage() {
   const adminUser = await requireAdminUser();
   let clients: Client[] = [];
+  let clientStats: Awaited<ReturnType<typeof getClientDirectoryStats>> = {};
   let hasLoadError = false;
 
   try {
     clients = await listClients();
+    clientStats = await getClientDirectoryStats(clients.map((client) => client.id));
   } catch (err) {
     console.error("Unable to load clients", err);
     hasLoadError = true;
@@ -100,6 +105,8 @@ export default async function ClientsPage() {
     contact_email: c.contact_email,
     status: c.status,
     updated_at: c.updated_at,
+    active_pages: clientStats[c.id]?.activePages ?? 0,
+    tracking_profiles: clientStats[c.id]?.trackingProfiles ?? 0,
   }));
 
   return (

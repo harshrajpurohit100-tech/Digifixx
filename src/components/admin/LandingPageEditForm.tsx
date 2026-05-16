@@ -210,7 +210,7 @@ export function LandingPageEditForm({
               name="internal_name"
               required
               defaultValue={landingPage.internal_name}
-              placeholder="Nova Media — Telegram Join Page"
+              placeholder="Client - Telegram Join Page"
               className={inputCls}
             />
             <p className={helperCls}>Only visible inside Digifixx.</p>
@@ -264,7 +264,7 @@ export function LandingPageEditForm({
               name="channel_name"
               required
               defaultValue={landingPage.channel_name || ""}
-              placeholder="OPTIONS MASTER™"
+              placeholder="Telegram Channel Name"
               className={inputCls}
             />
             <p className={helperCls}>Shown as the main title on the public page.</p>
@@ -499,7 +499,7 @@ export function LandingPageEditForm({
               name="pixel_id"
               required
               defaultValue={landingPage.tracking?.pixel_id || ""}
-              placeholder="123456789012345"
+              placeholder="Meta Pixel ID"
               className={inputCls}
             />
             <p className={helperCls}>Pixel loads only on this landing page.</p>
@@ -514,7 +514,7 @@ export function LandingPageEditForm({
               id="test_event_code"
               name="test_event_code"
               defaultValue={landingPage.tracking?.test_event_code || ""}
-              placeholder="TEST12345"
+              placeholder="Meta test event code"
               className={inputCls}
             />
             <p className={helperCls}>Optional. Used for Meta Events Manager testing.</p>

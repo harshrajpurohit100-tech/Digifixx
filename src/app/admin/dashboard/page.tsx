@@ -30,7 +30,34 @@ function formatNumber(value: number) {
 
 export default async function DashboardPage() {
   const adminUser = await requireAdminUser();
-  const overview = await getDashboardOverview();
+  let overview;
+
+  try {
+    overview = await getDashboardOverview();
+  } catch (error) {
+    console.error("Unable to load dashboard overview", error);
+
+    return (
+      <AdminShell
+        title="Dashboard"
+        description="Overview of your landing pages, traffic, and conversions."
+        user={getAdminDisplayUser(adminUser)}
+      >
+        <AdminCard className="rounded-[22px] shadow-[0_18px_45px_rgba(15,23,42,0.06)]">
+          <div className="max-w-xl">
+            <h2 className="text-lg font-extrabold text-[#0F172A]">
+              Unable to load dashboard
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#64748B]">
+              There was a problem loading live dashboard data. Check Supabase
+              configuration, service role access, and database policies.
+            </p>
+          </div>
+        </AdminCard>
+      </AdminShell>
+    );
+  }
+
   const lastSevenDayVisits = overview.visitsLast7Days.reduce(
     (total, item) => total + item.visits,
     0

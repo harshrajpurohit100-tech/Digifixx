@@ -47,7 +47,7 @@ function PreviewStructureCard() {
             Channel Name
           </h3>
           <p className="mt-1 text-[13px] font-medium text-[#64748B]">
-            17,821 subscribers
+            Subscriber count appears here
           </p>
 
           <div className="mt-5 space-y-2.5 text-left">
