@@ -25,7 +25,10 @@ type ClientsDirectoryProps = {
 
 function formatDate(iso: string) {
   try {
-    return format(new Date(iso), "MMM d, yyyy");
+    // Parse only the date portion (YYYY-MM-DD) to avoid UTC vs local timezone
+    // shifting the date (e.g. May 15 UTC → May 16 IST = hydration mismatch).
+    const [year, month, day] = iso.split("T")[0].split("-").map(Number);
+    return format(new Date(year, month - 1, day), "MMM d, yyyy");
   } catch {
     return iso;
   }
