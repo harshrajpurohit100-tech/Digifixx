@@ -1,22 +1,12 @@
+"use client";
+
 import { format } from "date-fns";
-import {
-  Copy,
-  Edit3,
-  Eye,
-  MoreHorizontal,
-  type LucideIcon,
-} from "lucide-react";
+import { Copy, Edit3, Eye, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { CopyButton } from "@/components/admin/CopyButton";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -34,6 +24,7 @@ import type {
 type LandingPagesTableProps = {
   landingPages: LandingPageWithClientAndTracking[];
   analyticsMap?: Record<string, LandingPageAnalyticsSummary>;
+  totalCount?: number;
 };
 
 const tableHeadings = [
@@ -46,7 +37,7 @@ const tableHeadings = [
   { label: "Conversions", className: "w-[120px]" },
   { label: "Public URL", className: "w-[180px]" },
   { label: "Last Updated", className: "w-[150px]" },
-  { label: "Actions", className: "w-[130px] text-right" },
+  { label: "Actions", className: "w-[160px] text-right" },
 ];
 
 function formatDate(value: string) {
@@ -120,11 +111,12 @@ function ActionIconButton({
 export function LandingPagesTable({
   landingPages,
   analyticsMap = {},
+  totalCount = landingPages.length,
 }: LandingPagesTableProps) {
   return (
     <div>
       <div className="overflow-x-auto">
-        <Table className="min-w-[1440px] table-fixed">
+        <Table className="min-w-[1470px] table-fixed">
           <TableHeader>
             <TableRow className="border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#F8FAFC]">
               {tableHeadings.map((heading) => (
@@ -146,9 +138,9 @@ export function LandingPagesTable({
               return (
                 <TableRow
                   key={page.id}
-                  className="h-[82px] border-[#E2E8F0] transition-colors hover:bg-[#F8FAFC]"
+                  className="h-[72px] border-[#E2E8F0] transition-colors hover:bg-[#F8FAFC]"
                 >
-                  <TableCell className="px-5 py-4">
+                  <TableCell className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm font-extrabold tracking-[-0.01em] text-[#0F172A]">
                         {page.public_code}
@@ -157,13 +149,13 @@ export function LandingPagesTable({
                         value={page.public_code}
                         copiedLabel="OK"
                         ariaLabel="Copy public code"
-                        className="size-[30px] rounded-lg p-0"
+                        className="size-[30px] rounded-lg border-[#E2E8F0] bg-white p-0 text-[#64748B] shadow-[0_6px_14px_rgba(15,23,42,0.04)] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
                       >
                         <Copy className="size-3.5" aria-hidden="true" />
                       </CopyButton>
                     </div>
                   </TableCell>
-                  <TableCell className="px-5 py-4">
+                  <TableCell className="px-5 py-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <LogoThumb page={page} />
                       <div className="min-w-0">
@@ -176,30 +168,30 @@ export function LandingPagesTable({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="truncate px-5 py-4 text-sm font-semibold text-[#334155]">
+                  <TableCell className="truncate px-5 py-3 text-sm font-semibold text-[#334155]">
                     {page.client?.name ?? "—"}
                   </TableCell>
-                  <TableCell className="px-5 py-4">
+                  <TableCell className="px-5 py-3">
                     <StatusBadge status={page.status} />
                   </TableCell>
-                  <TableCell className="px-5 py-4">
+                  <TableCell className="px-5 py-3">
                     <PixelStatus isConfigured={hasPixel} />
                   </TableCell>
-                  <TableCell className="px-5 py-4 text-sm font-bold text-[#0F172A]">
+                  <TableCell className="px-5 py-3 text-sm font-bold text-[#0F172A]">
                     {formatNumber(analytics?.totalVisits ?? 0)}
                   </TableCell>
-                  <TableCell className="px-5 py-4 text-sm font-bold text-[#0F172A]">
+                  <TableCell className="px-5 py-3 text-sm font-bold text-[#0F172A]">
                     {formatNumber(analytics?.totalConversions ?? 0)}
                   </TableCell>
-                  <TableCell className="px-5 py-4">
+                  <TableCell className="px-5 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-mono text-xs font-semibold text-[#475569]">
+                      <span className="max-w-[105px] truncate font-mono text-xs font-semibold text-[#475569]">
                         /p/{page.public_code}
                       </span>
                       <CopyButton value={publicUrl} />
                     </div>
                   </TableCell>
-                  <TableCell className="px-5 py-4">
+                  <TableCell className="px-5 py-3">
                     <p className="text-sm font-semibold text-[#334155]">
                       {formatDate(page.updated_at)}
                     </p>
@@ -207,42 +199,18 @@ export function LandingPagesTable({
                       {formatTime(page.updated_at)}
                     </p>
                   </TableCell>
-                  <TableCell className="px-5 py-4">
+                  <TableCell className="px-5 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <ActionIconButton
                         icon={Eye}
                         label="View"
                         href={`/admin/landing-pages/${page.id}`}
                       />
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="size-8 rounded-[10px] border-[#E2E8F0] bg-white p-0 text-[#64748B] hover:border-[#BFDBFE] hover:bg-[#F8FAFC] hover:text-[#0F172A]"
-                            aria-label="Landing page actions"
-                          >
-                            <MoreHorizontal
-                              className="size-4"
-                              aria-hidden="true"
-                            />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="min-w-36 rounded-xl border-[#E2E8F0] bg-white p-1 shadow-[0_18px_40px_rgba(15,23,42,0.12)]"
-                        >
-                          <DropdownMenuItem asChild>
-                            <Link
-                              href={`/admin/landing-pages/${page.id}/edit`}
-                              className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold text-[#475569] focus:text-[#0F172A]"
-                            >
-                              <Edit3 className="size-4" aria-hidden="true" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <ActionIconButton
+                        icon={Edit3}
+                        label="Edit"
+                        href={`/admin/landing-pages/${page.id}/edit`}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -254,7 +222,8 @@ export function LandingPagesTable({
 
       <div className="flex items-center justify-between gap-4 border-t border-[#E2E8F0] bg-white px-6 py-4">
         <p className="text-sm font-medium text-[#64748B]">
-          Showing 1 to {landingPages.length} of {landingPages.length} results
+          Showing {landingPages.length > 0 ? 1 : 0} to {landingPages.length} of{" "}
+          {totalCount} results
         </p>
         <div className="flex items-center gap-2">
           <Button
