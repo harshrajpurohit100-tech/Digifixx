@@ -146,3 +146,66 @@ export async function getDecryptedCapiTokenForProfile(profileId: string) {
 
   return decryptSecret(data.capi_access_token_encrypted);
 }
+
+export async function upsertTrackingProfileForLandingPage(
+  input: CreateMetaTrackingProfileInput
+) {
+  if (!input.landing_page_id) {
+    throw new Error("landing_page_id is required to upsert tracking profile");
+  }
+
+  const existingProfile = await getTrackingProfileForLandingPage(
+    input.landing_page_id
+  );
+
+  const parsedInput = createMetaTrackingProfileSchema.parse(input);
+  const supabase = await createSupabaseServerClient();
+  const { raw_capi_access_token: rawToken, ...profileInput } = parsedInput;
+
+  const updatePayload: Record<string, unknown> = {
+    ...profileInput,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (rawToken && rawToken.trim() !== "") {
+    updatePayload.capi_access_token_encrypted = encryptSecret(rawToken);
+    updatePayload.capi_token_last4 = getSecretLast4(rawToken);
+  }
+
+  if (existingProfile) {
+    const { data, error } = await supabase
+      .from("meta_tracking_profiles")
+      .update(updatePayload)
+      .eq("id", existingProfile.id)
+      .select(safeTrackingProfileColumns)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+    return data as SafeMetaTrackingProfile;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from("meta_tracking_profiles")
+    .insert({
+      ...profileInput,
+      capi_access_token_encrypted:
+        rawToken && rawToken.trim() !== "" ? encryptSecret(rawToken) : null,
+      capi_token_last4:
+        rawToken && rawToken.trim() !== "" ? getSecretLast4(rawToken) : null,
+      created_by: user?.id ?? null,
+    })
+    .select(safeTrackingProfileColumns)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as SafeMetaTrackingProfile;
+}

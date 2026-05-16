@@ -41,6 +41,7 @@ const landingPageWithRelationsSelect = `
     pixel_id,
     capi_token_last4,
     is_active,
+    test_event_code,
     default_click_event
   )
 `;
@@ -53,6 +54,7 @@ type LandingPageRelationRow = LandingPage & {
         pixel_id: string;
         capi_token_last4: string | null;
         is_active: boolean;
+        test_event_code: string | null;
         default_click_event: TrackingEventName;
       }[]
     | null;
@@ -236,4 +238,72 @@ export async function createLandingPage(input: CreateLandingPageRecordInput) {
   }
 
   return data as LandingPage;
+}
+
+type UpdateLandingPageRecordInput = Partial<CreateLandingPageRecordInput> & {
+  status?: import("@/types/digifixx").LandingPageStatus;
+};
+
+export async function updateLandingPage(
+  id: string,
+  input: UpdateLandingPageRecordInput
+) {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .update({
+      ...input,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as LandingPage;
+}
+
+export async function updateLandingPageStatus(
+  id: string,
+  status: import("@/types/digifixx").LandingPageStatus
+) {
+  const supabase = await createSupabaseServerClient();
+  const updateData: Record<string, unknown> = {
+    status,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (status === "active") {
+    updateData.published_at = new Date().toISOString();
+  } else if (status === "archived") {
+    updateData.archived_at = new Date().toISOString();
+  }
+
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .update(updateData)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as LandingPage;
+}
+
+export async function deleteLandingPage(id: string) {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("landing_pages")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw error;
+  }
 }

@@ -117,13 +117,22 @@ export function LandingPagesTable({ landingPages }: LandingPagesTableProps) {
                 {formatDate(page.updated_at)}
               </TableCell>
               <TableCell className="px-5 py-4">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-8 rounded-[10px] border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#475569]"
-                >
-                  <Link href={`/admin/landing-pages/${page.id}`}>View</Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-8 rounded-[10px] border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#475569]"
+                  >
+                    <Link href={`/admin/landing-pages/${page.id}`}>View</Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-8 rounded-[10px] border-[#E2E8F0] bg-white px-3 text-xs font-semibold text-[#475569]"
+                  >
+                    <Link href={`/admin/landing-pages/${page.id}/edit`}>Edit</Link>
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           );

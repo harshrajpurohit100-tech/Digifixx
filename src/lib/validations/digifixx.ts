@@ -142,3 +142,27 @@ export type UpdateMetaTrackingTokenInput = z.infer<
 export type CreateLandingPageWithTrackingInput = z.infer<
   typeof createLandingPageWithTrackingSchema
 >;
+
+export const updateLandingPageStatusSchema = z.object({
+  landing_page_id: z.string().uuid(),
+  status: z.enum(["draft", "active", "paused", "archived"]),
+});
+
+export const deleteLandingPageSchema = z.object({
+  landing_page_id: z.string().uuid(),
+  confirmation: z.literal("DELETE"),
+});
+
+export const updateLandingPageWithTrackingSchema =
+  createLandingPageWithTrackingSchema.extend({
+    landing_page_id: z.string().uuid(),
+    status: z.enum(["draft", "active", "paused", "archived"]),
+  });
+
+export type UpdateLandingPageStatusInput = z.infer<
+  typeof updateLandingPageStatusSchema
+>;
+export type DeleteLandingPageInput = z.infer<typeof deleteLandingPageSchema>;
+export type UpdateLandingPageWithTrackingInput = z.infer<
+  typeof updateLandingPageWithTrackingSchema
+>;

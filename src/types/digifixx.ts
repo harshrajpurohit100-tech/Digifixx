@@ -116,6 +116,7 @@ export type LandingPageWithClientAndTracking = LandingPage & {
     | "pixel_id"
     | "capi_token_last4"
     | "is_active"
+    | "test_event_code"
     | "default_click_event"
   > | null;
 };

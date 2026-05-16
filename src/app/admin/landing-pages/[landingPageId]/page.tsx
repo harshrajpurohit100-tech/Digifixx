@@ -7,15 +7,14 @@ import type { ReactNode } from "react";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { CopyButton } from "@/components/admin/CopyButton";
+import { LandingPageDangerZone } from "@/components/admin/LandingPageDangerZone";
 import { SectionHeader } from "@/components/admin/SectionHeader";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
-import {
-  getAdminDisplayUser,
-  requireAdminUser,
-} from "@/lib/auth/get-admin-user";
+import { getAdminDisplayUser, requireAdminUser } from "@/lib/auth/get-admin-user";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { getLandingPageDetail } from "@/lib/repositories/landing-pages.repository";
+import { updateLandingPageStatusAction } from "@/app/admin/landing-pages/actions";
 import type { LandingPageWithClientAndTracking } from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +72,11 @@ function PublicUrlCard({ page }: { page: LandingPageWithClientAndTracking }) {
       </div>
       <p className="mt-3 text-xs leading-5 text-[#64748B]">
         This URL does not reveal client or channel names.
+        {page.status !== "active" && (
+          <span className="mt-1 block font-semibold text-[#EF4444]">
+            Note: Public URL only works when status is active.
+          </span>
+        )}
       </p>
     </AdminCard>
   );
@@ -223,10 +227,67 @@ export default async function LandingPageDetailPage({
                 className="h-[38px] rounded-[10px] border-[#E2E8F0] bg-white px-3 text-sm font-semibold text-[#475569]"
               >
                 <Link href="/admin/landing-pages">
-                  <ArrowLeft data-icon="inline-start" />
-                  Back to Landing Pages
+                  <ArrowLeft data-icon="inline-start" className="mr-2 size-4" />
+                  Back
                 </Link>
               </Button>
+
+              <div className="h-5 w-px bg-[#E2E8F0]" />
+
+              <Button
+                asChild
+                className="h-[38px] rounded-[10px] bg-[#0F172A] px-4 text-sm font-semibold text-white hover:bg-[#334155]"
+              >
+                <Link href={`/admin/landing-pages/${page.id}/edit`}>Edit</Link>
+              </Button>
+
+              {(page.status === "draft" || page.status === "paused") && (
+                <form action={async () => {
+                  "use server";
+                  await updateLandingPageStatusAction(page.id, "active");
+                }}>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="h-[38px] rounded-[10px] border-[#10B981] bg-white px-4 text-sm font-semibold text-[#10B981] hover:bg-[#D1FAE5] hover:text-[#059669]"
+                  >
+                    Activate
+                  </Button>
+                </form>
+              )}
+
+              {page.status === "active" && (
+                <form action={async () => {
+                  "use server";
+                  await updateLandingPageStatusAction(page.id, "paused");
+                }}>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="h-[38px] rounded-[10px] border-[#F59E0B] bg-white px-4 text-sm font-semibold text-[#F59E0B] hover:bg-[#FEF3C7] hover:text-[#D97706]"
+                  >
+                    Pause
+                  </Button>
+                </form>
+              )}
+
+              {page.status !== "archived" && (
+                <form action={async () => {
+                  "use server";
+                  await updateLandingPageStatusAction(page.id, "archived");
+                }}>
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="h-[38px] rounded-[10px] border-[#64748B] bg-white px-4 text-sm font-semibold text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#475569]"
+                  >
+                    Archive
+                  </Button>
+                </form>
+              )}
+
+              <div className="h-5 w-px bg-[#E2E8F0]" />
+
               <CopyButton value={getPublicLandingPageUrl(page.public_code)} />
             </div>
           }
@@ -251,6 +312,8 @@ export default async function LandingPageDetailPage({
           <TelegramContentCard page={page} />
           <PreviewPlaceholder page={page} />
         </div>
+
+        <LandingPageDangerZone landingPageId={page.id} />
       </div>
     </AdminShell>
   );
