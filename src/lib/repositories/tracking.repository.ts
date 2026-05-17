@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getStartOfIstDayUtc } from "@/lib/date-format";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { TrackingPayload } from "@/lib/validations/tracking";
 import type {
@@ -192,15 +193,14 @@ export async function getLandingPageAnalyticsSummary(
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStart = getStartOfIstDayUtc();
 
   const { count: todayVisits } = await supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId)
     .eq("event_name", "PageView")
-    .gte("created_at", today.toISOString());
+    .gte("created_at", todayStart.toISOString());
 
   const { count: todayConversions } = await supabase
     .from("tracking_events")
@@ -213,7 +213,7 @@ export async function getLandingPageAnalyticsSummary(
       "CompleteRegistration",
       "ButtonClick",
     ])
-    .gte("created_at", today.toISOString());
+    .gte("created_at", todayStart.toISOString());
 
   const visits = totalVisits ?? 0;
   const conversions = totalConversions ?? 0;

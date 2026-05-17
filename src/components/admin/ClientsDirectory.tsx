@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, Search } from "lucide-react";
-import { format } from "date-fns";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { formatIstDate } from "@/lib/date-format";
 
 /* Plain serializable shape passed from server */
 export type PlainClient = {
@@ -24,17 +24,6 @@ export type PlainClient = {
 type ClientsDirectoryProps = {
   clients: PlainClient[];
 };
-
-function formatDate(iso: string) {
-  try {
-    // Parse only the date portion (YYYY-MM-DD) to avoid UTC vs local timezone
-    // shifting the date (e.g. May 15 UTC → May 16 IST = hydration mismatch).
-    const [year, month, day] = iso.split("T")[0].split("-").map(Number);
-    return format(new Date(year, month - 1, day), "MMM d, yyyy");
-  } catch {
-    return iso;
-  }
-}
 
 function ClientAvatar({ name }: { name: string }) {
   const initial = (name.charAt(0) || "?").toUpperCase();
@@ -187,7 +176,7 @@ export function ClientsDirectory({ clients }: ClientsDirectoryProps) {
                     {/* Last Updated */}
                     <td className="px-5 py-4">
                       <p className="text-[13px] text-[#475569]">
-                        {formatDate(client.updated_at)}
+                        {formatIstDate(client.updated_at)}
                       </p>
                     </td>
 

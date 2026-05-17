@@ -1,7 +1,6 @@
 import "server-only";
 
-import { format, startOfDay, subDays } from "date-fns";
-
+import { getIstDayKey, getLastIstDays } from "@/lib/date-format";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { TrackingEventName } from "@/types/digifixx";
 
@@ -43,21 +42,17 @@ function calculateConversionRate(visits: number, conversions: number) {
 }
 
 function buildLast7Days() {
-  const today = startOfDay(new Date());
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const day = subDays(today, 6 - index);
-    return {
-      key: format(day, "yyyy-MM-dd"),
-      date: format(day, "MMM d"),
-      visits: 0,
-      conversions: 0,
-    };
-  });
+  return getLastIstDays(7).map((day) => ({
+    key: day.key,
+    date: day.date,
+    visits: 0,
+    conversions: 0,
+  }));
 }
 
 export async function getDashboardOverview(): Promise<DashboardOverview> {
   const supabase = getSupabaseAdminClient();
+  const last7DayWindowStart = getLastIstDays(7)[0].startUtc.toISOString();
 
   const [
     clientsResult,
@@ -83,7 +78,7 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
     supabase
       .from("tracking_events")
       .select("landing_page_id, event_name, created_at")
-      .gte("created_at", subDays(startOfDay(new Date()), 6).toISOString())
+      .gte("created_at", last7DayWindowStart)
       .order("created_at", { ascending: true })
       .limit(10000),
     supabase
@@ -100,7 +95,7 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
   const last7DayMap = new Map(last7Days.map((day) => [day.key, day]));
 
   ((sevenDayEventsResult.data ?? []) as TrackingEventRow[]).forEach((event) => {
-    const dayKey = format(new Date(event.created_at), "yyyy-MM-dd");
+    const dayKey = getIstDayKey(event.created_at);
     const day = last7DayMap.get(dayKey);
 
     if (!day) {

@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import {
   Archive,
   ArrowLeft,
@@ -31,6 +30,7 @@ import { LandingPageDangerZone } from "@/components/admin/LandingPageDangerZone"
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { getAdminDisplayUser, requireAdminUser } from "@/lib/auth/get-admin-user";
+import { formatIstDate } from "@/lib/date-format";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { getLandingPageDetail } from "@/lib/repositories/landing-pages.repository";
 import { getLandingPageAnalyticsSummary } from "@/lib/repositories/tracking.repository";
@@ -55,10 +55,6 @@ const emptyAnalytics: LandingPageAnalyticsSummary = {
   todayVisits: 0,
   todayConversions: 0,
 };
-
-function formatDate(value: string) {
-  return format(new Date(value), "MMM d, yyyy");
-}
 
 function formatNumber(value: number) {
   return value.toLocaleString("en-IN");
@@ -366,8 +362,8 @@ function PageStatusCard({ page }: { page: LandingPageWithClientAndTracking }) {
       <CardHeader title="Page Status" icon={BadgeCheck} />
       <div className="mt-5 grid gap-4">
         <DetailItem label="Status" value={<StatusBadge status={page.status} />} />
-        <DetailItem label="Created" value={formatDate(page.created_at)} />
-        <DetailItem label="Updated" value={formatDate(page.updated_at)} />
+        <DetailItem label="Created" value={formatIstDate(page.created_at)} />
+        <DetailItem label="Updated" value={formatIstDate(page.updated_at)} />
       </div>
     </AdminCard>
   );

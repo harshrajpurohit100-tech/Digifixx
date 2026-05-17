@@ -16,7 +16,6 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { format } from "date-fns";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
@@ -27,6 +26,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { AnalyticsLandingPageSelector } from "@/components/admin/AnalyticsLandingPageSelector";
 import { Button } from "@/components/ui/button";
 import { getAdminDisplayUser, requireAdminUser } from "@/lib/auth/get-admin-user";
+import { formatIstDateTime } from "@/lib/date-format";
 import {
   getAnalyticsOverview,
   getLandingPageAnalyticsDetail,
@@ -44,7 +44,7 @@ export const dynamic = "force-dynamic";
 /* ── helpers ── */
 function formatEventTime(createdAt: string) {
   try {
-    return format(new Date(createdAt), "MMM d, HH:mm");
+    return formatIstDateTime(createdAt);
   } catch {
     return createdAt;
   }

@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import {
   ArrowLeft,
   BarChart3,
@@ -19,6 +18,7 @@ import {
   getAdminDisplayUser,
   requireAdminUser,
 } from "@/lib/auth/get-admin-user";
+import { formatIstDate } from "@/lib/date-format";
 import {
   getClientById,
   getClientWorkspaceSummary,
@@ -32,10 +32,6 @@ type ClientDetailPageProps = {
     clientId: string;
   }>;
 };
-
-function formatDate(value: string) {
-  return format(new Date(value), "MMM d, yyyy");
-}
 
 function DetailItem({
   label,
@@ -117,7 +113,7 @@ function ClientDetailsCard({ client }: { client: Client }) {
             </span>
           }
         />
-        <DetailItem label="Created At" value={formatDate(client.created_at)} />
+        <DetailItem label="Created At" value={formatIstDate(client.created_at)} />
       </div>
     </AdminCard>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import { Copy, Edit3, Eye, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -15,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatIstDate, formatIstTime } from "@/lib/date-format";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import type {
   LandingPageAnalyticsSummary,
@@ -39,21 +39,6 @@ const tableHeadings = [
   { label: "Last Updated", className: "w-[150px]" },
   { label: "Actions", className: "w-[160px] text-right" },
 ];
-
-function formatDate(value: string) {
-  // Parse only YYYY-MM-DD to avoid UTC → local timezone date shift (e.g. IST hydration mismatch)
-  const [year, month, day] = value.split("T")[0].split("-").map(Number);
-  return format(new Date(year, month - 1, day), "MMM d, yyyy");
-}
-
-function formatTime(value: string) {
-  // Parse time in local terms using the raw hour/minute from the ISO string
-  // to keep server and client consistent regardless of timezone
-  const timePart = value.split("T")[1]?.slice(0, 5) ?? "00:00";
-  const [h, m] = timePart.split(":").map(Number);
-  const d = new Date(2000, 0, 1, h, m);
-  return format(d, "h:mm a");
-}
 
 function formatNumber(value: number) {
   return value.toLocaleString("en-IN");
@@ -200,10 +185,10 @@ export function LandingPagesTable({
                   </TableCell>
                   <TableCell className="px-5 py-3">
                     <p className="text-sm font-semibold text-[#334155]">
-                      {formatDate(page.updated_at)}
+                      {formatIstDate(page.updated_at)}
                     </p>
                     <p className="mt-1 text-xs font-medium text-[#64748B]">
-                      {formatTime(page.updated_at)}
+                      {formatIstTime(page.updated_at)}
                     </p>
                   </TableCell>
                   <TableCell className="px-5 py-3">

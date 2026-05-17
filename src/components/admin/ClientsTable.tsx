@@ -1,8 +1,8 @@
-import { format } from "date-fns";
 import Link from "next/link";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { formatIstDate } from "@/lib/date-format";
 import {
   Table,
   TableBody,
@@ -16,10 +16,6 @@ import type { Client } from "@/types/digifixx";
 type ClientsTableProps = {
   clients: Client[];
 };
-
-function formatDate(value: string) {
-  return format(new Date(value), "MMM d, yyyy");
-}
 
 export function ClientsTable({ clients }: ClientsTableProps) {
   return (
@@ -86,7 +82,7 @@ export function ClientsTable({ clients }: ClientsTableProps) {
               0
             </TableCell>
             <TableCell className="px-5 py-4 text-sm text-[#64748B]">
-              {formatDate(client.updated_at)}
+              {formatIstDate(client.updated_at)}
             </TableCell>
             <TableCell className="px-5 py-4">
               <Button
