@@ -29,7 +29,8 @@ type LandingPagesTableProps = {
 
 const tableHeadings = [
   { label: "Public Code", className: "w-[150px]" },
-  { label: "Channel", className: "w-[260px]" },
+  { label: "Channel", className: "w-[230px]" },
+  { label: "Internal Page Name", className: "w-[320px]" },
   { label: "Client", className: "w-[150px]" },
   { label: "Status", className: "w-[120px]" },
   { label: "Pixel", className: "w-[90px]" },
@@ -108,7 +109,7 @@ export function LandingPagesTable({
   return (
     <div>
       <div className="overflow-x-auto">
-        <Table className="min-w-[1470px] table-fixed">
+        <Table className="min-w-[1770px] table-fixed">
           <TableHeader>
             <TableRow className="border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#F8FAFC]">
               {tableHeadings.map((heading) => (
@@ -154,11 +155,13 @@ export function LandingPagesTable({
                         <p className="truncate text-sm font-bold text-[#0F172A]">
                           {page.channel_name ?? "Untitled channel"}
                         </p>
-                        <p className="mt-1 truncate text-xs font-medium text-[#64748B]">
-                          {page.internal_name}
-                        </p>
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell className="px-5 py-3">
+                    <p className="whitespace-normal break-words text-sm font-semibold leading-5 text-[#0F172A]">
+                      {page.internal_name}
+                    </p>
                   </TableCell>
                   <TableCell className="truncate px-5 py-3 text-sm font-semibold text-[#334155]">
                     {page.client?.name ?? "—"}
