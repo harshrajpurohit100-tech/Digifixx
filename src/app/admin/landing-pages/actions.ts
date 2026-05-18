@@ -298,6 +298,7 @@ export async function updateLandingPageAction(
     urgency_text: getString(formData, "urgency_text"),
     pixel_id: getString(formData, "pixel_id"),
     raw_capi_access_token: getString(formData, "raw_capi_access_token"),
+    remove_capi_token: formData.get("remove_capi_token") === "on",
     test_event_code: getString(formData, "test_event_code"),
     default_click_event: getString(formData, "default_click_event") || "Lead",
   };
@@ -338,7 +339,11 @@ export async function updateLandingPageAction(
     };
   }
 
-  if (parsedInput.data.raw_capi_access_token && !process.env.ENCRYPTION_SECRET) {
+  if (
+    parsedInput.data.raw_capi_access_token &&
+    !rawInput.remove_capi_token &&
+    !process.env.ENCRYPTION_SECRET
+  ) {
     return { error: "Server encryption is not configured." };
   }
 
@@ -394,18 +399,25 @@ export async function updateLandingPageAction(
       cta_button_text: ctaButtonText,
     });
 
-    await upsertTrackingProfileForLandingPage({
-      client_id: parsedInput.data.client_id,
-      landing_page_id: updatedPage.id,
-      profile_name: `${parsedInput.data.channel_name} Tracking`,
-      meta_business_id: undefined,
-      meta_ad_account_id: undefined,
-      pixel_id: parsedInput.data.pixel_id,
-      raw_capi_access_token: parsedInput.data.raw_capi_access_token,
-      test_event_code: parsedInput.data.test_event_code,
-      default_pageview_event: "PageView",
-      default_click_event: parsedInput.data.default_click_event,
-    });
+    await upsertTrackingProfileForLandingPage(
+      {
+        client_id: parsedInput.data.client_id,
+        landing_page_id: updatedPage.id,
+        profile_name: `${parsedInput.data.channel_name} Tracking`,
+        meta_business_id: undefined,
+        meta_ad_account_id: undefined,
+        pixel_id: parsedInput.data.pixel_id,
+        raw_capi_access_token: rawInput.remove_capi_token
+          ? undefined
+          : parsedInput.data.raw_capi_access_token,
+        test_event_code: parsedInput.data.test_event_code,
+        default_pageview_event: "PageView",
+        default_click_event: parsedInput.data.default_click_event,
+      },
+      {
+        removeCapiToken: rawInput.remove_capi_token,
+      }
+    );
 
     await createAuditLog({
       action: "update",
@@ -415,6 +427,7 @@ export async function updateLandingPageAction(
       new_values: {
         status: updatedPage.status,
         internal_name: updatedPage.internal_name,
+        capi_token_removed: rawInput.remove_capi_token,
       },
     });
   } catch (error) {

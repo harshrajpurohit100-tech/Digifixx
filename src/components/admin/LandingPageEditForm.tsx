@@ -559,6 +559,21 @@ export function LandingPageEditForm({
                 ? `Existing token: ••••${landingPage.tracking.capi_token_last4} — Stored encrypted. Never shown publicly.`
                 : "No CAPI token saved. Stored encrypted. Never shown publicly."}
             </p>
+            {landingPage.tracking?.capi_token_last4 ? (
+              <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2]/60 px-3 py-2.5 text-[12px] leading-5 text-[#991B1B]">
+                <input
+                  type="checkbox"
+                  name="remove_capi_token"
+                  className="mt-0.5 size-4 rounded border-[#FCA5A5] accent-[#DC2626]"
+                />
+                <span>
+                  <span className="font-bold">Remove saved CAPI token</span>
+                  <br />
+                  The Pixel will stay saved, but server-side CAPI delivery will
+                  be skipped until a new token is added.
+                </span>
+              </label>
+            ) : null}
             <FieldError message={state.fieldErrors?.raw_capi_access_token} />
           </div>
         </div>

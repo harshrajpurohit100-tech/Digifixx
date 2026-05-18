@@ -201,7 +201,10 @@ export async function getActiveDecryptedTrackingProfileForLandingPage(
 }
 
 export async function upsertTrackingProfileForLandingPage(
-  input: CreateMetaTrackingProfileInput
+  input: CreateMetaTrackingProfileInput,
+  options?: {
+    removeCapiToken?: boolean;
+  }
 ) {
   if (!input.landing_page_id) {
     throw new Error("landing_page_id is required to upsert tracking profile");
@@ -220,7 +223,10 @@ export async function upsertTrackingProfileForLandingPage(
     updated_at: new Date().toISOString(),
   };
 
-  if (rawToken && rawToken.trim() !== "") {
+  if (options?.removeCapiToken) {
+    updatePayload.capi_access_token_encrypted = null;
+    updatePayload.capi_token_last4 = null;
+  } else if (rawToken && rawToken.trim() !== "") {
     updatePayload.capi_access_token_encrypted = encryptSecret(rawToken);
     updatePayload.capi_token_last4 = getSecretLast4(rawToken);
   }
