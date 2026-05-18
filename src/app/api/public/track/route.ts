@@ -7,6 +7,7 @@ import {
   getTrackingEventByLandingPageAndEventId,
   trackPublicEvent,
 } from "@/lib/repositories/tracking.repository";
+import { classifyTraffic } from "@/lib/tracking/bot-classifier";
 import { getOrCreateTrackingCookies } from "@/lib/tracking/cookies";
 import { getRequestIp, hashIp } from "@/lib/tracking/ip";
 import { parseUserAgent } from "@/lib/tracking/user-agent";
@@ -79,6 +80,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userAgent = req.headers.get("user-agent");
+    const trafficClassification = classifyTraffic({
+      userAgent,
+      acceptLanguage: req.headers.get("accept-language"),
+      secFetchMode: req.headers.get("sec-fetch-mode"),
+      secFetchDest: req.headers.get("sec-fetch-dest"),
+      secFetchSite: req.headers.get("sec-fetch-site"),
+    });
+
     const duplicateEvent = await getTrackingEventByLandingPageAndEventId(
       landingPage.id,
       payload.eventId
@@ -89,6 +99,7 @@ export async function POST(req: NextRequest) {
         ok: true,
         duplicate: true,
         capiStatus: duplicateEvent.capi_delivery_status,
+        trafficType: trafficClassification.trafficType,
       });
     }
 
@@ -98,7 +109,6 @@ export async function POST(req: NextRequest) {
     // 4. Resolve IP and User Agent
     const rawIp = getRequestIp(req);
     const ipHash = hashIp(rawIp);
-    const userAgent = req.headers.get("user-agent");
     const { browser, os, device_type } = parseUserAgent(userAgent);
 
     let capiResult: MetaCapiSendResult = {
@@ -145,6 +155,9 @@ export async function POST(req: NextRequest) {
       capiResponse: capiResult.response,
       capiError: capiResult.error ?? null,
       capiSentAt: capiResult.sentAt ?? null,
+      trafficType: trafficClassification.trafficType,
+      isBot: trafficClassification.isBot,
+      botReason: trafficClassification.reason,
     });
 
     if (result.duplicate) {
@@ -152,10 +165,15 @@ export async function POST(req: NextRequest) {
         ok: true,
         duplicate: true,
         capiStatus: capiResult.status,
+        trafficType: trafficClassification.trafficType,
       });
     }
 
-    return NextResponse.json({ ok: true, capiStatus: capiResult.status });
+    return NextResponse.json({
+      ok: true,
+      capiStatus: capiResult.status,
+      trafficType: trafficClassification.trafficType,
+    });
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "Landing page not found or inactive.") {
       return NextResponse.json(

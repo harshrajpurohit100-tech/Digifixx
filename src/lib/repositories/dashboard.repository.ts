@@ -70,15 +70,18 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
     supabase
       .from("tracking_events")
       .select("id", { count: "exact", head: true })
-      .eq("event_name", "PageView"),
+      .eq("event_name", "PageView")
+      .eq("traffic_type", "human"),
     supabase
       .from("tracking_events")
       .select("id", { count: "exact", head: true })
+      .eq("traffic_type", "human")
       .in("event_name", conversionEvents),
     supabase
       .from("tracking_events")
       .select("landing_page_id, event_name, created_at")
       .gte("created_at", last7DayWindowStart)
+      .eq("traffic_type", "human")
       .order("created_at", { ascending: true })
       .limit(10000),
     supabase

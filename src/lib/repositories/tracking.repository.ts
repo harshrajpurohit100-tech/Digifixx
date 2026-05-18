@@ -14,8 +14,18 @@ import type {
   LandingPageStatus,
   CapiDeliveryStatus,
   PublicLandingPage,
+  TrafficQuality,
+  TrafficType,
 } from "@/types/digifixx";
 import { getActivePublicLandingPageByCode } from "./public-landing-pages.repository";
+
+const conversionEvents = [
+  "Lead",
+  "Contact",
+  "Subscribe",
+  "CompleteRegistration",
+  "ButtonClick",
+];
 
 type TrackEventParams = {
   payload: TrackingPayload;
@@ -32,6 +42,9 @@ type TrackEventParams = {
   capiResponse?: unknown;
   capiError?: string | null;
   capiSentAt?: string | null;
+  trafficType?: TrafficType;
+  isBot?: boolean;
+  botReason?: string | null;
 };
 
 export async function getTrackingEventByLandingPageAndEventId(
@@ -69,6 +82,9 @@ export async function trackPublicEvent(params: TrackEventParams) {
     capiResponse,
     capiError,
     capiSentAt,
+    trafficType = "unknown",
+    isBot = false,
+    botReason = null,
   } = params;
 
   const landingPage =
@@ -152,6 +168,9 @@ export async function trackPublicEvent(params: TrackEventParams) {
     capi_response: capiResponse ?? null,
     capi_error: capiError ?? null,
     capi_sent_at: capiSentAt ?? null,
+    traffic_type: trafficType,
+    is_bot: isBot,
+    bot_reason: botReason,
     metadata: payload.metadata || {},
   });
 
@@ -174,24 +193,24 @@ export async function getLandingPageAnalyticsSummary(
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId)
-    .eq("event_name", "PageView");
+    .eq("event_name", "PageView")
+    .eq("traffic_type", "human");
 
   const { count: totalConversions } = await supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId)
-    .in("event_name", [
-      "Lead",
-      "Contact",
-      "Subscribe",
-      "CompleteRegistration",
-      "ButtonClick",
-    ]);
+    .eq("traffic_type", "human")
+    .in("event_name", conversionEvents);
 
-  const { count: uniqueVisitors } = await supabase
-    .from("visitor_sessions")
-    .select("*", { count: "exact", head: true })
-    .eq("landing_page_id", landingPageId);
+  const { data: humanVisitorSessions } = await supabase
+    .from("tracking_events")
+    .select("visitor_session_id")
+    .eq("landing_page_id", landingPageId)
+    .eq("event_name", "PageView")
+    .eq("traffic_type", "human")
+    .not("visitor_session_id", "is", null)
+    .limit(10000);
 
   const todayStart = getStartOfIstDayUtc();
 
@@ -200,19 +219,15 @@ export async function getLandingPageAnalyticsSummary(
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId)
     .eq("event_name", "PageView")
+    .eq("traffic_type", "human")
     .gte("created_at", todayStart.toISOString());
 
   const { count: todayConversions } = await supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId)
-    .in("event_name", [
-      "Lead",
-      "Contact",
-      "Subscribe",
-      "CompleteRegistration",
-      "ButtonClick",
-    ])
+    .eq("traffic_type", "human")
+    .in("event_name", conversionEvents)
     .gte("created_at", todayStart.toISOString());
 
   const visits = totalVisits ?? 0;
@@ -222,7 +237,9 @@ export async function getLandingPageAnalyticsSummary(
   return {
     totalVisits: visits,
     totalConversions: conversions,
-    uniqueVisitors: uniqueVisitors ?? 0,
+    uniqueVisitors: new Set(
+      (humanVisitorSessions ?? []).map((event) => event.visitor_session_id)
+    ).size,
     conversionRate: Math.round(conversionRate * 100) / 100,
     todayVisits: todayVisits ?? 0,
     todayConversions: todayConversions ?? 0,
@@ -251,20 +268,15 @@ export async function getLandingPagesAnalyticsMap(
   const { data: events } = await supabase
     .from("tracking_events")
     .select("landing_page_id, event_name")
-    .in("landing_page_id", landingPageIds);
+    .in("landing_page_id", landingPageIds)
+    .eq("traffic_type", "human");
 
   if (events) {
     for (const ev of events) {
       if (ev.event_name === "PageView") {
         map[ev.landing_page_id].totalVisits += 1;
       } else if (
-        [
-          "Lead",
-          "Contact",
-          "Subscribe",
-          "CompleteRegistration",
-          "ButtonClick",
-        ].includes(ev.event_name)
+        conversionEvents.includes(ev.event_name)
       ) {
         map[ev.landing_page_id].totalConversions += 1;
       }
@@ -287,18 +299,14 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
   const { count: totalVisits } = await supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
-    .eq("event_name", "PageView");
+    .eq("event_name", "PageView")
+    .eq("traffic_type", "human");
 
   const { count: totalConversions } = await supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
-    .in("event_name", [
-      "Lead",
-      "Contact",
-      "Subscribe",
-      "CompleteRegistration",
-      "ButtonClick",
-    ]);
+    .eq("traffic_type", "human")
+    .in("event_name", conversionEvents);
 
   const { count: uniqueVisitors } = await supabase
     .from("visitor_sessions")
@@ -318,6 +326,7 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
       utm_source,
       created_at,
       capi_delivery_status,
+      traffic_type,
       landing_pages (
         public_code,
         internal_name,
@@ -338,6 +347,7 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
     utm_source: ev.utm_source as string | null,
     created_at: ev.created_at as string,
     capi_delivery_status: ev.capi_delivery_status as CapiDeliveryStatus,
+    traffic_type: (ev.traffic_type || "unknown") as TrafficType,
   }));
 
   // Top landing pages - since we don't have a view, we'll fetch all active pages and compute their basic stats.
@@ -390,7 +400,7 @@ export async function getLandingPageAnalyticsDetail(
   // Fetch latest events for breakdowns (capped at 5000)
   const { data: events } = await supabase
     .from("tracking_events")
-    .select("event_name, utm_source, referrer, device_type, browser, created_at, id, capi_delivery_status")
+    .select("event_name, utm_source, referrer, device_type, browser, created_at, id, capi_delivery_status, traffic_type, bot_reason")
     .eq("landing_page_id", landingPageId)
     .order("created_at", { ascending: false })
     .limit(5000);
@@ -399,41 +409,62 @@ export async function getLandingPageAnalyticsDetail(
   const deviceMap: Record<string, { visits: number; conversions: number }> = {};
   const eventMap: Record<string, number> = {};
   const recentEvents: DetailedRecentTrackingEvent[] = [];
-
-  const conversionEvents = [
-    "Lead",
-    "Contact",
-    "Subscribe",
-    "CompleteRegistration",
-    "ButtonClick",
-  ];
+  const trafficQuality: TrafficQuality = {
+    humanVisits: 0,
+    botVisits: 0,
+    systemVisits: 0,
+    unknownVisits: 0,
+    rawVisits: 0,
+    humanConversions: 0,
+    botConversions: 0,
+    systemConversions: 0,
+    unknownConversions: 0,
+  };
 
   if (events) {
     for (const ev of events) {
-      // Event breakdown
-      eventMap[ev.event_name] = (eventMap[ev.event_name] || 0) + 1;
+      const trafficType = (ev.traffic_type || "unknown") as TrafficType;
+      const isConversion = conversionEvents.includes(ev.event_name);
 
-      // Source breakdown
-      let source = ev.utm_source || "Direct / Unknown";
-      if (source === "Direct / Unknown" && ev.referrer) {
-        try {
-          const url = new URL(ev.referrer);
-          source = url.hostname;
-        } catch {
-          // ignore invalid referrer
-        }
+      if (ev.event_name === "PageView") {
+        trafficQuality.rawVisits += 1;
+        if (trafficType === "human") trafficQuality.humanVisits += 1;
+        if (trafficType === "bot") trafficQuality.botVisits += 1;
+        if (trafficType === "system") trafficQuality.systemVisits += 1;
+        if (trafficType === "unknown") trafficQuality.unknownVisits += 1;
       }
-      if (!sourceMap[source]) sourceMap[source] = { visits: 0, conversions: 0 };
-      if (ev.event_name === "PageView") sourceMap[source].visits++;
-      if (conversionEvents.includes(ev.event_name))
-        sourceMap[source].conversions++;
 
-      // Device breakdown
-      const device = ev.device_type || "unknown";
-      if (!deviceMap[device]) deviceMap[device] = { visits: 0, conversions: 0 };
-      if (ev.event_name === "PageView") deviceMap[device].visits++;
-      if (conversionEvents.includes(ev.event_name))
-        deviceMap[device].conversions++;
+      if (isConversion) {
+        if (trafficType === "human") trafficQuality.humanConversions += 1;
+        if (trafficType === "bot") trafficQuality.botConversions += 1;
+        if (trafficType === "system") trafficQuality.systemConversions += 1;
+        if (trafficType === "unknown") trafficQuality.unknownConversions += 1;
+      }
+
+      if (trafficType === "human") {
+        // Event breakdown
+        eventMap[ev.event_name] = (eventMap[ev.event_name] || 0) + 1;
+
+        // Source breakdown
+        let source = ev.utm_source || "Direct / Unknown";
+        if (source === "Direct / Unknown" && ev.referrer) {
+          try {
+            const url = new URL(ev.referrer);
+            source = url.hostname;
+          } catch {
+            // ignore invalid referrer
+          }
+        }
+        if (!sourceMap[source]) sourceMap[source] = { visits: 0, conversions: 0 };
+        if (ev.event_name === "PageView") sourceMap[source].visits++;
+        if (isConversion) sourceMap[source].conversions++;
+
+        // Device breakdown
+        const device = ev.device_type || "unknown";
+        if (!deviceMap[device]) deviceMap[device] = { visits: 0, conversions: 0 };
+        if (ev.event_name === "PageView") deviceMap[device].visits++;
+        if (isConversion) deviceMap[device].conversions++;
+      }
 
       // Recent events (first 20)
       if (recentEvents.length < 20) {
@@ -446,6 +477,8 @@ export async function getLandingPageAnalyticsDetail(
           referrer: ev.referrer,
           created_at: ev.created_at,
           capi_delivery_status: ev.capi_delivery_status,
+          traffic_type: trafficType,
+          bot_reason: ev.bot_reason,
         });
       }
     }
@@ -453,6 +486,7 @@ export async function getLandingPageAnalyticsDetail(
 
   return {
     summary,
+    trafficQuality,
     recentEvents,
     sourceBreakdown: Object.entries(sourceMap)
       .map(([source, stats]) => ({

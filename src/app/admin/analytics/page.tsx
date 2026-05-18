@@ -10,6 +10,7 @@ import {
   MousePointerClick,
   PanelTop,
   Percent,
+  ShieldCheck,
   Smartphone,
   Tablet,
   TrendingUp,
@@ -37,6 +38,8 @@ import type {
   AnalyticsOverview,
   CapiDeliveryStatus,
   LandingPageAnalyticsDetail,
+  TrafficQuality,
+  TrafficType,
 } from "@/types/digifixx";
 
 export const dynamic = "force-dynamic";
@@ -133,6 +136,110 @@ function CapiBadge({ status }: { status: CapiDeliveryStatus }) {
       <span className={`size-1.5 rounded-full ${s.dot}`} />
       {s.label}
     </span>
+  );
+}
+
+function TrafficBadge({ type }: { type: TrafficType }) {
+  const styles: Record<TrafficType, { bg: string; text: string; dot: string; label: string }> = {
+    human: {
+      bg: "bg-[#ECFDF5]",
+      text: "text-[#166534]",
+      dot: "bg-[#10B981]",
+      label: "Human",
+    },
+    bot: {
+      bg: "bg-[#FEF2F2]",
+      text: "text-[#B91C1C]",
+      dot: "bg-[#EF4444]",
+      label: "Bot",
+    },
+    system: {
+      bg: "bg-[#EFF6FF]",
+      text: "text-[#1D4ED8]",
+      dot: "bg-[#2563EB]",
+      label: "System",
+    },
+    unknown: {
+      bg: "bg-[#F1F5F9]",
+      text: "text-[#475569]",
+      dot: "bg-[#94A3B8]",
+      label: "Unknown",
+    },
+  };
+  const s = styles[type];
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${s.bg} ${s.text}`}>
+      <span className={`size-1.5 rounded-full ${s.dot}`} />
+      {s.label}
+    </span>
+  );
+}
+
+function TrafficQualityCard({ quality }: { quality: TrafficQuality }) {
+  const items = [
+    {
+      label: "Human Visits",
+      value: quality.humanVisits,
+      badge: "Human",
+      badgeClass: "bg-[#ECFDF5] text-[#166534]",
+    },
+    {
+      label: "Bot Views",
+      value: quality.botVisits,
+      badge: "Bot",
+      badgeClass: "bg-[#FEF2F2] text-[#B91C1C]",
+    },
+    {
+      label: "System Views",
+      value: quality.systemVisits,
+      badge: "System",
+      badgeClass: "bg-[#EFF6FF] text-[#1D4ED8]",
+    },
+    {
+      label: "Unknown",
+      value: quality.unknownVisits,
+      badge: "Unknown",
+      badgeClass: "bg-[#F1F5F9] text-[#475569]",
+    },
+    {
+      label: "Raw Total",
+      value: quality.rawVisits,
+      badge: "All",
+      badgeClass: "bg-white text-[#64748B] border border-[#E2E8F0]",
+    },
+  ];
+
+  return (
+    <div className="rounded-[20px] border border-[#E2E8F0] bg-white p-5 shadow-[0_4px_20px_rgba(15,23,42,0.05)]">
+      <CardHeader
+        icon={ShieldCheck}
+        iconBg="bg-[#EFF6FF]"
+        iconColor="text-[#2563EB]"
+        title="Traffic Quality"
+        subtitle="Bot and platform preview traffic is separated from human analytics."
+      />
+      <div className="grid grid-cols-5 gap-3">
+        {items.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-[14px] border border-[#E2E8F0] bg-[#F8FAFC] p-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#94A3B8]">
+                {item.label}
+              </span>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.badgeClass}`}>
+                {item.badge}
+              </span>
+            </div>
+            <p className="mt-3 text-[22px] font-extrabold tracking-[-0.03em] text-[#0F172A]">
+              {item.value.toLocaleString("en-IN")}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -256,6 +363,9 @@ export default async function AnalyticsPage({
                         /p/{selectedPage.public_code}
                       </span>
                     </p>
+                    <p className="mt-1 text-[12px] text-[#64748B]">
+                      Analytics are filtered to human traffic. Bot and system traffic is shown separately below.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -290,7 +400,7 @@ export default async function AnalyticsPage({
               <MetricCard
                 label="Total Visits"
                 value={detail.summary.totalVisits.toLocaleString("en-IN")}
-                helper="All time"
+                helper="Human PageViews"
                 icon={Eye}
                 iconBg="bg-[#F5F3FF]"
                 iconColor="text-[#7C3AED]"
@@ -298,7 +408,7 @@ export default async function AnalyticsPage({
               <MetricCard
                 label="Unique Visitors"
                 value={detail.summary.uniqueVisitors.toLocaleString("en-IN")}
-                helper="Sessions"
+                helper="Human sessions"
                 icon={Users}
                 iconBg="bg-[#EFF6FF]"
                 iconColor="text-[#2563EB]"
@@ -306,7 +416,7 @@ export default async function AnalyticsPage({
               <MetricCard
                 label="Conversions"
                 value={detail.summary.totalConversions.toLocaleString("en-IN")}
-                helper="All time"
+                helper="Human events"
                 icon={TrendingUp}
                 iconBg="bg-[#ECFDF5]"
                 iconColor="text-[#16A34A]"
@@ -322,7 +432,7 @@ export default async function AnalyticsPage({
               <MetricCard
                 label="Today Visits"
                 value={detail.summary.todayVisits.toLocaleString("en-IN")}
-                helper="Today"
+                helper="Human today"
                 icon={CalendarDays}
                 iconBg="bg-[#EFF6FF]"
                 iconColor="text-[#2563EB]"
@@ -330,12 +440,14 @@ export default async function AnalyticsPage({
               <MetricCard
                 label="Today Conv."
                 value={detail.summary.todayConversions.toLocaleString("en-IN")}
-                helper="Today"
+                helper="Human today"
                 icon={CheckCircle}
                 iconBg="bg-[#ECFDF5]"
                 iconColor="text-[#16A34A]"
               />
             </div>
+
+            <TrafficQualityCard quality={detail.trafficQuality} />
 
             {detail.summary.totalVisits > 0 ? (
               <>
@@ -348,7 +460,7 @@ export default async function AnalyticsPage({
                       iconBg="bg-[#F5F3FF]"
                       iconColor="text-[#7C3AED]"
                       title="Source Breakdown"
-                      subtitle="Top traffic sources by UTM source or referrer."
+                      subtitle="Human traffic sources by UTM source or referrer."
                     />
                     {detail.sourceBreakdown.length > 0 ? (
                       <div>
@@ -374,7 +486,7 @@ export default async function AnalyticsPage({
                       iconBg="bg-[#EFF6FF]"
                       iconColor="text-[#2563EB]"
                       title="Device Breakdown"
-                      subtitle="Visits and conversions by device type."
+                      subtitle="Human visits and conversions by device type."
                     />
                     {detail.deviceBreakdown.length > 0 ? (
                       <div>
@@ -404,7 +516,7 @@ export default async function AnalyticsPage({
                       iconBg="bg-[#F5F3FF]"
                       iconColor="text-[#7C3AED]"
                       title="Event Breakdown"
-                      subtitle="Page views and key events."
+                      subtitle="Human page views and key events."
                     />
                     {detail.eventBreakdown.length > 0 ? (
                       <div className="flex flex-col gap-4">
@@ -452,13 +564,13 @@ export default async function AnalyticsPage({
                       iconBg="bg-[#EFF6FF]"
                       iconColor="text-[#2563EB]"
                       title="Recent Events"
-                      subtitle="Latest tracked events for this landing page."
+                      subtitle="Latest tracked events, including bot/system classifications."
                     />
                     {detail.recentEvents.length > 0 ? (
                       <div className="overflow-hidden rounded-[14px] border border-[#E2E8F0]">
                         {/* Table header */}
-                        <div className="grid grid-cols-[100px_120px_90px_110px_1fr] items-center gap-2 border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5">
-                          {["Time", "Event", "CAPI", "Device / Browser", "Source"].map((h) => (
+                        <div className="grid grid-cols-[100px_105px_88px_90px_110px_1fr] items-center gap-2 border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5">
+                          {["Time", "Event", "Traffic", "CAPI", "Device / Browser", "Source"].map((h) => (
                             <span
                               key={h}
                               className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#94A3B8]"
@@ -472,7 +584,7 @@ export default async function AnalyticsPage({
                           {detail.recentEvents.map((ev) => (
                             <div
                               key={ev.id}
-                              className="grid grid-cols-[100px_120px_90px_110px_1fr] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-[#FAFAFA]"
+                              className="grid grid-cols-[100px_105px_88px_90px_110px_1fr] items-center gap-2 px-4 py-3.5 transition-colors hover:bg-[#FAFAFA]"
                             >
                               <span className="text-[12px] whitespace-nowrap text-[#64748B]">
                                 {formatEventTime(ev.created_at)}
@@ -480,6 +592,9 @@ export default async function AnalyticsPage({
                               <span className="text-[13px] font-bold text-[#0F172A]">
                                 {ev.event_name}
                               </span>
+                              <div>
+                                <TrafficBadge type={ev.traffic_type} />
+                              </div>
                               <div>
                                 <CapiBadge status={ev.capi_delivery_status} />
                               </div>
@@ -509,7 +624,7 @@ export default async function AnalyticsPage({
               <EmptyState
                 icon={BarChart3}
                 title="No analytics recorded yet"
-                description="Open the public page or share its link to start collecting visits and button clicks."
+                description="Human visits and button clicks will appear here. Bot and system traffic is shown in the Traffic Quality card."
                 action={
                   <Button
                     asChild
@@ -544,7 +659,7 @@ export default async function AnalyticsPage({
               <StatCard
                 title="Total Visits"
                 value={overview.totalVisits.toLocaleString("en-IN")}
-                helper="PageView events across all pages"
+                helper="Human PageView events across all pages"
                 icon={Users}
                 tone="info"
               />
@@ -558,14 +673,14 @@ export default async function AnalyticsPage({
               <StatCard
                 title="Total Conversions"
                 value={overview.totalConversions.toLocaleString("en-IN")}
-                helper="Lead, Contact, Subscribe, etc."
+                helper="Human Lead, Contact, Subscribe, etc."
                 icon={MousePointerClick}
                 tone="success"
               />
               <StatCard
                 title="Conversion Rate"
                 value={`${overview.conversionRate}%`}
-                helper="Conversions ÷ total visits"
+                helper="Human conversions ÷ visits"
                 icon={TrendingUp}
                 tone={overview.conversionRate >= 5 ? "success" : "default"}
               />

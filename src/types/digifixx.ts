@@ -26,6 +26,8 @@ export type CapiDeliveryStatus =
   | "failed"
   | "skipped";
 
+export type TrafficType = "human" | "bot" | "system" | "unknown";
+
 export type LeadStatus =
   | "new"
   | "contacted"
@@ -225,6 +227,9 @@ export type TrackingEvent = {
   capi_response: JsonRecord | null;
   capi_error: string | null;
   capi_sent_at: string | null;
+  traffic_type: TrafficType;
+  is_bot: boolean;
+  bot_reason: string | null;
   metadata: JsonRecord;
   created_at: string;
 };
@@ -296,6 +301,7 @@ export type RecentTrackingEvent = {
   utm_source: string | null;
   created_at: string;
   capi_delivery_status: CapiDeliveryStatus;
+  traffic_type: TrafficType;
 };
 
 export type AnalyticsOverview = {
@@ -341,10 +347,25 @@ export type DetailedRecentTrackingEvent = {
   referrer: string | null;
   created_at: string;
   capi_delivery_status: CapiDeliveryStatus;
+  traffic_type: TrafficType;
+  bot_reason: string | null;
+};
+
+export type TrafficQuality = {
+  humanVisits: number;
+  botVisits: number;
+  systemVisits: number;
+  unknownVisits: number;
+  rawVisits: number;
+  humanConversions: number;
+  botConversions: number;
+  systemConversions: number;
+  unknownConversions: number;
 };
 
 export type LandingPageAnalyticsDetail = {
   summary: LandingPageAnalyticsSummary;
+  trafficQuality: TrafficQuality;
   recentEvents: DetailedRecentTrackingEvent[];
   sourceBreakdown: AnalyticsSourceBreakdown[];
   deviceBreakdown: AnalyticsDeviceBreakdown[];
