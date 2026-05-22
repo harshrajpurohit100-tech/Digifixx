@@ -28,6 +28,32 @@ export type CapiDeliveryStatus =
 
 export type TrafficType = "human" | "bot" | "system" | "unknown";
 
+export type AnalyticsDatePreset =
+  | "today"
+  | "yesterday"
+  | "last7"
+  | "last30"
+  | "thisMonth"
+  | "lastMonth"
+  | "custom";
+
+export type AnalyticsEventFilter =
+  | "all"
+  | "PageView"
+  | "Lead"
+  | "Purchase"
+  | "CompleteRegistration"
+  | "custom";
+
+export type AnalyticsPagination = {
+  page: number;
+  pageSize: 50 | 100 | 200;
+  total: number;
+  totalPages: number;
+  from: number;
+  to: number;
+};
+
 export type LeadStatus =
   | "new"
   | "contacted"
@@ -341,6 +367,7 @@ export type AnalyticsEventBreakdown = {
 export type DetailedRecentTrackingEvent = {
   id: string;
   event_name: string;
+  event_id: string;
   device_type: string | null;
   browser: string | null;
   utm_source: string | null;
@@ -349,6 +376,11 @@ export type DetailedRecentTrackingEvent = {
   capi_delivery_status: CapiDeliveryStatus;
   traffic_type: TrafficType;
   bot_reason: string | null;
+  landing_page_id: string;
+  landing_page_public_code: string | null;
+  landing_page_name: string | null;
+  visitor_id: string | null;
+  session_id: string | null;
 };
 
 export type TrafficQuality = {
@@ -366,8 +398,12 @@ export type TrafficQuality = {
 export type LandingPageAnalyticsDetail = {
   summary: LandingPageAnalyticsSummary;
   trafficQuality: TrafficQuality;
-  recentEvents: DetailedRecentTrackingEvent[];
   sourceBreakdown: AnalyticsSourceBreakdown[];
   deviceBreakdown: AnalyticsDeviceBreakdown[];
   eventBreakdown: AnalyticsEventBreakdown[];
+};
+
+export type AnalyticsEventExplorer = {
+  events: DetailedRecentTrackingEvent[];
+  pagination: AnalyticsPagination;
 };

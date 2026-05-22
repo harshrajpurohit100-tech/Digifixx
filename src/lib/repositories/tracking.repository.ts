@@ -1,9 +1,12 @@
 import "server-only";
 
+import type { AnalyticsDateRange } from "@/lib/analytics/date-range";
 import { getStartOfIstDayUtc } from "@/lib/date-format";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { TrackingPayload } from "@/lib/validations/tracking";
 import type {
+  AnalyticsEventExplorer,
+  AnalyticsEventFilter,
   LandingPageAnalyticsSummary,
   AnalyticsOverview,
   TopLandingPageAnalytics,
@@ -26,6 +29,121 @@ const conversionEvents = [
   "CompleteRegistration",
   "ButtonClick",
 ];
+
+const eventExplorerPageSizes = [50, 100, 200] as const;
+
+type AnalyticsFilters = {
+  dateRange?: Pick<AnalyticsDateRange, "startDate" | "endDate">;
+};
+
+type AnalyticsEventExplorerFilters = AnalyticsFilters & {
+  landingPageId?: string | null;
+  search?: string | null;
+  eventType?: AnalyticsEventFilter | null;
+  trafficType?: TrafficType | "all" | null;
+  capiStatus?: CapiDeliveryStatus | "all" | null;
+  page?: number | null;
+  pageSize?: number | null;
+};
+
+type RawExplorerEvent = {
+  id: string;
+  event_name: string;
+  event_id: string;
+  device_type: string | null;
+  browser: string | null;
+  utm_source: string | null;
+  referrer: string | null;
+  created_at: string;
+  capi_delivery_status: CapiDeliveryStatus;
+  traffic_type: TrafficType | null;
+  bot_reason: string | null;
+  landing_page_id: string;
+  visitor_sessions:
+    | {
+        visitor_id: string | null;
+        session_id: string | null;
+      }
+    | {
+        visitor_id: string | null;
+        session_id: string | null;
+      }[]
+    | null;
+  landing_pages:
+    | {
+        public_code: string | null;
+        internal_name: string | null;
+        channel_name: string | null;
+      }
+    | {
+        public_code: string | null;
+        internal_name: string | null;
+        channel_name: string | null;
+      }[]
+    | null;
+};
+
+// Supabase query builders carry very deep generic types; keep this small helper
+// structurally typed at the boundary so filtered queries remain readable.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyDateRangeToQuery(query: any, dateRange?: AnalyticsFilters["dateRange"]) {
+  let nextQuery = query;
+
+  if (dateRange?.startDate) {
+    nextQuery = nextQuery.gte("created_at", dateRange.startDate.toISOString());
+  }
+
+  if (dateRange?.endDate) {
+    nextQuery = nextQuery.lt("created_at", dateRange.endDate.toISOString());
+  }
+
+  return nextQuery;
+}
+
+function normalizePageSize(value?: number | null): 50 | 100 | 200 {
+  return eventExplorerPageSizes.includes(value as 50 | 100 | 200)
+    ? (value as 50 | 100 | 200)
+    : 50;
+}
+
+function normalizePage(value?: number | null) {
+  return value && Number.isFinite(value) && value > 0
+    ? Math.floor(value)
+    : 1;
+}
+
+function sanitizeSearchTerm(value?: string | null) {
+  return value?.trim().replace(/[%,()]/g, "").slice(0, 120) || null;
+}
+
+function firstRelation<T>(value: T | T[] | null | undefined) {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function mapExplorerEvent(row: RawExplorerEvent): DetailedRecentTrackingEvent {
+  const visitorSession = firstRelation(row.visitor_sessions);
+  const landingPage = firstRelation(row.landing_pages);
+
+  return {
+    id: row.id,
+    event_name: row.event_name,
+    event_id: row.event_id,
+    device_type: row.device_type,
+    browser: row.browser,
+    utm_source: row.utm_source,
+    referrer: row.referrer,
+    created_at: row.created_at,
+    capi_delivery_status: row.capi_delivery_status,
+    traffic_type: row.traffic_type ?? "unknown",
+    bot_reason: row.bot_reason,
+    landing_page_id: row.landing_page_id,
+    landing_page_public_code: landingPage?.public_code ?? null,
+    landing_page_name:
+      landingPage?.channel_name ?? landingPage?.internal_name ?? null,
+    visitor_id: visitorSession?.visitor_id ?? null,
+    session_id: visitorSession?.session_id ?? null,
+  };
+}
 
 type TrackEventParams = {
   payload: TrackingPayload;
@@ -185,25 +303,36 @@ export async function trackPublicEvent(params: TrackEventParams) {
 }
 
 export async function getLandingPageAnalyticsSummary(
-  landingPageId: string
+  landingPageId: string,
+  filters: AnalyticsFilters = {}
 ): Promise<LandingPageAnalyticsSummary> {
   const supabase = getSupabaseAdminClient();
 
-  const { count: totalVisits } = await supabase
+  const totalVisitsQuery = supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId)
     .eq("event_name", "PageView")
     .eq("traffic_type", "human");
 
-  const { count: totalConversions } = await supabase
+  const { count: totalVisits } = await applyDateRangeToQuery(
+    totalVisitsQuery,
+    filters.dateRange
+  );
+
+  const totalConversionsQuery = supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("landing_page_id", landingPageId)
     .eq("traffic_type", "human")
     .in("event_name", conversionEvents);
 
-  const { data: humanVisitorSessions } = await supabase
+  const { count: totalConversions } = await applyDateRangeToQuery(
+    totalConversionsQuery,
+    filters.dateRange
+  );
+
+  const humanVisitorSessionsQuery = supabase
     .from("tracking_events")
     .select("visitor_session_id")
     .eq("landing_page_id", landingPageId)
@@ -211,6 +340,11 @@ export async function getLandingPageAnalyticsSummary(
     .eq("traffic_type", "human")
     .not("visitor_session_id", "is", null)
     .limit(10000);
+
+  const { data: humanVisitorSessions } = await applyDateRangeToQuery(
+    humanVisitorSessionsQuery,
+    filters.dateRange
+  );
 
   const todayStart = getStartOfIstDayUtc();
 
@@ -238,7 +372,9 @@ export async function getLandingPageAnalyticsSummary(
     totalVisits: visits,
     totalConversions: conversions,
     uniqueVisitors: new Set(
-      (humanVisitorSessions ?? []).map((event) => event.visitor_session_id)
+      ((humanVisitorSessions ?? []) as { visitor_session_id: string | null }[]).map(
+        (event) => event.visitor_session_id
+      )
     ).size,
     conversionRate: Math.round(conversionRate * 100) / 100,
     todayVisits: todayVisits ?? 0,
@@ -247,7 +383,8 @@ export async function getLandingPageAnalyticsSummary(
 }
 
 export async function getLandingPagesAnalyticsMap(
-  landingPageIds: string[]
+  landingPageIds: string[],
+  filters: AnalyticsFilters = {}
 ): Promise<Record<string, LandingPageAnalyticsSummary>> {
   if (landingPageIds.length === 0) return {};
 
@@ -265,11 +402,16 @@ export async function getLandingPagesAnalyticsMap(
     };
   }
 
-  const { data: events } = await supabase
+  const eventsQuery = supabase
     .from("tracking_events")
     .select("landing_page_id, event_name")
     .in("landing_page_id", landingPageIds)
     .eq("traffic_type", "human");
+
+  const { data: events } = await applyDateRangeToQuery(
+    eventsQuery,
+    filters.dateRange
+  );
 
   if (events) {
     for (const ev of events) {
@@ -293,31 +435,52 @@ export async function getLandingPagesAnalyticsMap(
   return map;
 }
 
-export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
+export async function getAnalyticsOverview(
+  filters: AnalyticsFilters = {}
+): Promise<AnalyticsOverview> {
   const supabase = getSupabaseAdminClient();
 
-  const { count: totalVisits } = await supabase
+  const totalVisitsQuery = supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("event_name", "PageView")
     .eq("traffic_type", "human");
 
-  const { count: totalConversions } = await supabase
+  const { count: totalVisits } = await applyDateRangeToQuery(
+    totalVisitsQuery,
+    filters.dateRange
+  );
+
+  const totalConversionsQuery = supabase
     .from("tracking_events")
     .select("*", { count: "exact", head: true })
     .eq("traffic_type", "human")
     .in("event_name", conversionEvents);
 
-  const { count: uniqueVisitors } = await supabase
-    .from("visitor_sessions")
-    .select("*", { count: "exact", head: true });
+  const { count: totalConversions } = await applyDateRangeToQuery(
+    totalConversionsQuery,
+    filters.dateRange
+  );
+
+  const uniqueVisitorsQuery = supabase
+    .from("tracking_events")
+    .select("visitor_session_id")
+    .eq("event_name", "PageView")
+    .eq("traffic_type", "human")
+    .not("visitor_session_id", "is", null)
+    .limit(10000);
+
+  const { data: humanVisitorSessions } = await applyDateRangeToQuery(
+    uniqueVisitorsQuery,
+    filters.dateRange
+  );
 
   const visits = totalVisits ?? 0;
   const conversions = totalConversions ?? 0;
   const conversionRate = visits > 0 ? (conversions / visits) * 100 : 0;
 
   // Recent Events
-  const { data: recentEventsData } = await supabase
+  const recentEventsQuery = supabase
     .from("tracking_events")
     .select(`
       id,
@@ -335,6 +498,11 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
     `)
     .order("created_at", { ascending: false })
     .limit(10);
+
+  const { data: recentEventsData } = await applyDateRangeToQuery(
+    recentEventsQuery,
+    filters.dateRange
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recentEvents: RecentTrackingEvent[] = ((recentEventsData || []) as any[]).map((ev) => ({
@@ -361,7 +529,7 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
 
   if (activePages && activePages.length > 0) {
     const ids = activePages.map(p => p.id);
-    const analyticsMap = await getLandingPagesAnalyticsMap(ids);
+    const analyticsMap = await getLandingPagesAnalyticsMap(ids, filters);
     
     const pagesWithStats = activePages.map(p => {
       const stats = analyticsMap[p.id];
@@ -384,7 +552,11 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
   return {
     totalVisits: visits,
     totalConversions: conversions,
-    uniqueVisitors: uniqueVisitors ?? 0,
+    uniqueVisitors: new Set(
+      ((humanVisitorSessions ?? []) as { visitor_session_id: string | null }[]).map(
+        (event) => event.visitor_session_id
+      )
+    ).size,
     conversionRate: Math.round(conversionRate * 100) / 100,
     topLandingPages,
     recentEvents,
@@ -392,23 +564,28 @@ export async function getAnalyticsOverview(): Promise<AnalyticsOverview> {
 }
 
 export async function getLandingPageAnalyticsDetail(
-  landingPageId: string
+  landingPageId: string,
+  filters: AnalyticsFilters = {}
 ): Promise<LandingPageAnalyticsDetail> {
-  const summary = await getLandingPageAnalyticsSummary(landingPageId);
+  const summary = await getLandingPageAnalyticsSummary(landingPageId, filters);
   const supabase = getSupabaseAdminClient();
 
   // Fetch latest events for breakdowns (capped at 5000)
-  const { data: events } = await supabase
+  const eventsQuery = supabase
     .from("tracking_events")
     .select("event_name, utm_source, referrer, device_type, browser, created_at, id, capi_delivery_status, traffic_type, bot_reason")
     .eq("landing_page_id", landingPageId)
     .order("created_at", { ascending: false })
     .limit(5000);
 
+  const { data: events } = await applyDateRangeToQuery(
+    eventsQuery,
+    filters.dateRange
+  );
+
   const sourceMap: Record<string, { visits: number; conversions: number }> = {};
   const deviceMap: Record<string, { visits: number; conversions: number }> = {};
   const eventMap: Record<string, number> = {};
-  const recentEvents: DetailedRecentTrackingEvent[] = [];
   const trafficQuality: TrafficQuality = {
     humanVisits: 0,
     botVisits: 0,
@@ -466,28 +643,12 @@ export async function getLandingPageAnalyticsDetail(
         if (isConversion) deviceMap[device].conversions++;
       }
 
-      // Recent events (first 20)
-      if (recentEvents.length < 20) {
-        recentEvents.push({
-          id: ev.id,
-          event_name: ev.event_name,
-          device_type: ev.device_type,
-          browser: ev.browser,
-          utm_source: ev.utm_source,
-          referrer: ev.referrer,
-          created_at: ev.created_at,
-          capi_delivery_status: ev.capi_delivery_status,
-          traffic_type: trafficType,
-          bot_reason: ev.bot_reason,
-        });
-      }
     }
   }
 
   return {
     summary,
     trafficQuality,
-    recentEvents,
     sourceBreakdown: Object.entries(sourceMap)
       .map(([source, stats]) => ({
         source,
@@ -507,6 +668,218 @@ export async function getLandingPageAnalyticsDetail(
       }))
       .sort((a, b) => b.count - a.count),
   };
+}
+
+async function findLandingPageIdsForEventSearch(search: string) {
+  const supabase = getSupabaseAdminClient();
+  const term = `%${search}%`;
+  const { data } = await supabase
+    .from("landing_pages")
+    .select("id")
+    .or(
+      `public_code.ilike.${term},internal_name.ilike.${term},channel_name.ilike.${term}`
+    )
+    .limit(50);
+
+  return (data ?? []).map((page) => page.id as string);
+}
+
+function applyEventTypeFilter<
+  T extends {
+    eq: (column: string, value: string) => T;
+  },
+>(query: T, eventType?: AnalyticsEventFilter | null) {
+  if (!eventType || eventType === "all") {
+    return query;
+  }
+
+  if (eventType === "custom") {
+    return query.eq("event_name", "Custom");
+  }
+
+  if (eventType === "Purchase") {
+    return query.eq("custom_event_name", "Purchase");
+  }
+
+  return query.eq("event_name", eventType);
+}
+
+async function getEventSearchOrFilter(search?: string | null) {
+  const sanitized = sanitizeSearchTerm(search);
+
+  if (!sanitized) {
+    return null;
+  }
+
+  const landingPageIds = await findLandingPageIdsForEventSearch(sanitized);
+  const term = `%${sanitized}%`;
+  const filters = [
+    `event_id.ilike.${term}`,
+    `event_name.ilike.${term}`,
+    `custom_event_name.ilike.${term}`,
+    `utm_source.ilike.${term}`,
+    `referrer.ilike.${term}`,
+    `event_source_url.ilike.${term}`,
+  ];
+
+  if (landingPageIds.length > 0) {
+    filters.push(`landing_page_id.in.(${landingPageIds.join(",")})`);
+  }
+
+  return filters.join(",");
+}
+
+function applyExplorerBaseFilters<
+  T extends {
+    eq: (column: string, value: string) => T;
+    gte: (column: string, value: string) => T;
+    lt: (column: string, value: string) => T;
+    or: (filters: string) => T;
+  },
+>(
+  query: T,
+  filters: AnalyticsEventExplorerFilters,
+  searchOrFilter: string | null
+) {
+  let nextQuery = applyDateRangeToQuery(query, filters.dateRange);
+
+  if (filters.landingPageId) {
+    nextQuery = nextQuery.eq("landing_page_id", filters.landingPageId);
+  }
+
+  nextQuery = applyEventTypeFilter(nextQuery, filters.eventType);
+
+  if (filters.trafficType && filters.trafficType !== "all") {
+    nextQuery = nextQuery.eq("traffic_type", filters.trafficType);
+  }
+
+  if (filters.capiStatus && filters.capiStatus !== "all") {
+    nextQuery = nextQuery.eq("capi_delivery_status", filters.capiStatus);
+  }
+
+  if (searchOrFilter) {
+    nextQuery = nextQuery.or(searchOrFilter);
+  }
+
+  return nextQuery;
+}
+
+export async function getAnalyticsEventExplorer(
+  filters: AnalyticsEventExplorerFilters
+): Promise<AnalyticsEventExplorer> {
+  const supabase = getSupabaseAdminClient();
+  const pageSize = normalizePageSize(filters.pageSize);
+  const page = normalizePage(filters.page);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const searchOrFilter = await getEventSearchOrFilter(filters.search);
+
+  const query = supabase
+    .from("tracking_events")
+    .select(
+      `
+      id,
+      event_name,
+      event_id,
+      device_type,
+      browser,
+      utm_source,
+      referrer,
+      created_at,
+      capi_delivery_status,
+      traffic_type,
+      bot_reason,
+      landing_page_id,
+      visitor_sessions (
+        visitor_id,
+        session_id
+      ),
+      landing_pages (
+        public_code,
+        internal_name,
+        channel_name
+      )
+    `,
+      { count: "exact" }
+    );
+
+  const { data, count, error } = await applyExplorerBaseFilters(
+    query,
+    filters,
+    searchOrFilter
+  )
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    throw error;
+  }
+
+  const total = count ?? 0;
+
+  return {
+    events: ((data ?? []) as RawExplorerEvent[]).map(mapExplorerEvent),
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      from: total === 0 ? 0 : from + 1,
+      to: Math.min(from + pageSize, total),
+    },
+  };
+}
+
+export async function listAnalyticsEventsForExport(
+  filters: Omit<AnalyticsEventExplorerFilters, "page" | "pageSize"> & {
+    offset: number;
+    limit: number;
+  }
+) {
+  const supabase = getSupabaseAdminClient();
+  const searchOrFilter = await getEventSearchOrFilter(filters.search);
+
+  const query = supabase
+    .from("tracking_events")
+    .select(
+      `
+      id,
+      event_name,
+      event_id,
+      device_type,
+      browser,
+      utm_source,
+      referrer,
+      created_at,
+      capi_delivery_status,
+      traffic_type,
+      bot_reason,
+      landing_page_id,
+      visitor_sessions (
+        visitor_id,
+        session_id
+      ),
+      landing_pages (
+        public_code,
+        internal_name,
+        channel_name
+      )
+    `
+    );
+
+  const { data, error } = await applyExplorerBaseFilters(
+    query,
+    filters,
+    searchOrFilter
+  )
+    .order("created_at", { ascending: false })
+    .range(filters.offset, filters.offset + filters.limit - 1);
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as RawExplorerEvent[]).map(mapExplorerEvent);
 }
 
 export async function listLandingPagesForAnalyticsSelector(): Promise<
